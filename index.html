@@ -3,359 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sound Arena Pro | เครื่องวัดเสียงระดับมืออาชีพ</title>
+    <title>Sound Arena Pro | Multiplayer Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Configuration จากที่คุณระบุไว้ ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR_R9LbzUqq-rJEZWr_vSzcMWSAxPeEM3g",
+            authDomain: "soundmeter-4737b.firebaseapp.com",
+            projectId: "soundmeter-4737b",
+            storageBucket: "soundmeter-4737b.firebasestorage.app",
+            messagingSenderId: "608802477732",
+            appId: "1:608802477732:web:662b24228d3dd332243831",
+            measurementId: "G-99V07ZB1Z7"
+        };
+
+        // เริ่มต้น Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #05070a;
-            color: #e2e8f0;
-            overflow-x: hidden;
-        }
+        // ใช้รหัสโปรเจกต์ของคุณเป็น appId สำหรับ Path
+        const appId = "soundmeter-4737b";
 
-        .glass-card {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 24px;
-        }
+        // ตัวแปรสถานะแอป
+        let userUid = null;
+        let currentRoom = "";
+        let userName = "";
+        let isJoined = false;
+        let lastUpdate = 0;
+        let audioContext, analyser, microphone, dataArray;
+        let currentOffset = 90;
 
-        .neon-text-blue {
-            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
-        }
-
-        .meter-glow {
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
-        }
-
-        .active-glow {
-            filter: drop-shadow(0 0 8px #3b82f6);
-        }
-
-        .flash-impact {
-            animation: impact 0.3s ease-out;
-        }
-
-        @keyframes impact {
-            0% { background-color: rgba(59, 130, 246, 0.4); }
-            100% { background-color: transparent; }
-        }
-
-        /* Custom Slider */
-        input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #3b82f6; margin-top: -6px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-
-        .mode-tab.active {
-            background-color: #2563eb;
-            color: white;
-        }
-
-        /* Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
-
-    <!-- Header -->
-    <header class="w-full max-w-5xl flex justify-between items-center mb-6">
-        <div class="flex items-center gap-2">
-            <div class="p-2 bg-blue-600 rounded-lg">
-                <i data-lucide="trophy" class="text-white w-6 h-6"></i>
-            </div>
-            <h1 class="text-xl font-bold tracking-tight text-blue-400">SOUND<span class="text-white">ARENA</span> <span class="text-[10px] bg-blue-900/50 px-2 py-0.5 rounded border border-blue-500/30 ml-1">PRO</span></h1>
-        </div>
-        <div id="status-indicator" class="flex items-center gap-2 text-sm text-slate-400">
-            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-            Disconnected
-        </div>
-    </header>
-
-    <!-- Mode Selector -->
-    <div class="w-full max-w-md flex bg-slate-900/50 p-1 rounded-2xl mb-8 border border-slate-800">
-        <button onclick="switchMode('realtime')" id="tab-realtime" class="mode-tab active flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-all">Real-time</button>
-        <button onclick="switchMode('challenge')" id="tab-challenge" class="mode-tab flex-1 py-2 px-4 rounded-xl text-sm font-medium text-slate-400 transition-all">Scream Test</button>
-    </div>
-
-    <main id="main-container" class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left Column: Primary Display -->
-        <div class="lg:col-span-8 glass-card p-8 flex flex-col items-center justify-center relative overflow-hidden meter-glow min-h-[500px]">
-            <div id="impact-layer" class="absolute inset-0 pointer-events-none transition-colors duration-300"></div>
-            <div class="absolute top-4 right-6 text-slate-500 text-xs uppercase tracking-widest font-semibold" id="display-label">Live Monitoring</div>
-            
-            <!-- Challenge Timer Overlay -->
-            <div id="challenge-ui" class="hidden absolute inset-0 z-10 bg-black/60 flex flex-col items-center justify-center backdrop-blur-md">
-                <div id="countdown-text" class="text-7xl md:text-9xl font-black text-blue-500 mb-6 italic drop-shadow-lg">READY?</div>
-                <button id="start-challenge-btn" class="px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-full font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all hover:scale-105 active:scale-95">START CHALLENGE</button>
-            </div>
-
-            <div class="relative flex items-center justify-center mt-4">
-                <svg class="w-64 h-64 md:w-80 md:h-80 transform -rotate-90">
-                    <circle cx="50%" cy="50%" r="42%" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-800" />
-                    <circle id="db-circle" cx="50%" cy="50%" r="42%" stroke="currentColor" stroke-width="12" fill="transparent" 
-                            stroke-dasharray="1000" stroke-dashoffset="1000"
-                            class="text-blue-500 transition-all duration-75 ease-out" stroke-linecap="round" />
-                </svg>
-                
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span id="db-value" class="text-7xl md:text-8xl font-extrabold text-white neon-text-blue">0.0</span>
-                    <span class="text-blue-400 font-medium mt-1 uppercase tracking-widest text-sm">Decibels (dB)</span>
-                </div>
-            </div>
-
-            <!-- Visualizer Canvas -->
-            <div class="w-full h-32 mt-10 relative">
-                <canvas id="visualizer" class="w-full h-full opacity-80"></canvas>
-            </div>
-        </div>
-
-        <!-- Right Column: Stats & Leaderboard -->
-        <div class="lg:col-span-4 flex flex-col gap-6">
-            <!-- Stats Card -->
-            <div class="glass-card p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-slate-400 text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                        <i data-lucide="zap" class="w-4 h-4 text-yellow-500"></i> Session Stats
-                    </h3>
-                    <button id="reset-btn" class="p-1.5 hover:bg-slate-800 rounded-lg transition-colors" title="Reset Statistics">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-500"></i>
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-                        <p class="text-slate-500 text-[10px] uppercase">Peak</p>
-                        <p id="peak-value" class="text-xl font-bold text-white">0.0</p>
-                    </div>
-                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-                        <p class="text-slate-500 text-[10px] uppercase">Average</p>
-                        <p id="avg-value" class="text-xl font-bold text-blue-400">0.0</p>
-                    </div>
-                </div>
-
-                <div class="mt-6 space-y-3">
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-500 font-semibold uppercase tracking-tighter">Mic Calibration</span>
-                        <span id="offset-display" class="text-blue-400 font-bold">+90 dB</span>
-                    </div>
-                    <input type="range" id="offset-slider" min="50" max="130" value="90" class="w-full cursor-pointer">
-                    <p class="text-[10px] text-slate-500 text-center">เพิ่ม/ลดค่าเพื่อให้ตรงกับเครื่องมาตรฐาน</p>
-                </div>
-            </div>
-
-            <!-- Leaderboard Card -->
-            <div class="glass-card p-6 flex-1 flex flex-col min-h-[300px]">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-slate-400 text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                        <i data-lucide="award" class="w-4 h-4 text-blue-400"></i> Top Screamers
-                    </h3>
-                    <button onclick="clearLeaderboard()" class="text-[10px] text-slate-600 hover:text-red-400 uppercase font-bold transition-colors">Clear</button>
-                </div>
-                <div id="leaderboard-list" class="space-y-3 overflow-y-auto max-h-[320px] pr-2 custom-scrollbar flex-1">
-                    <div class="text-center text-slate-500 text-xs py-8">ไม่มีสถิติในเครื่องนี้</div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal for Winner Name -->
-    <div id="name-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] hidden flex items-center justify-center p-6">
-        <div class="max-w-sm w-full glass-card p-8 border-blue-500/50">
-            <h2 class="text-2xl font-bold mb-2 text-center text-blue-400">New High Score!</h2>
-            <p id="final-score-text" class="text-center text-4xl font-black text-white mb-6">0.0 dB</p>
-            <input type="text" id="player-name" maxlength="15" placeholder="กรอกชื่อของคุณ" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 mb-4 text-white focus:outline-none focus:border-blue-500">
-            <button id="save-score-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all">บันทึกผลคะแนน</button>
-        </div>
-    </div>
-
-    <!-- Start Overlay -->
-    <div id="overlay" class="fixed inset-0 bg-black/95 backdrop-blur-2xl z-50 flex items-center justify-center p-6 text-center">
-        <div class="max-w-md glass-card p-10 border-blue-600/50 shadow-[0_0_60px_rgba(37,99,235,0.15)]">
-            <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 active-glow cursor-pointer hover:scale-110 transition-all duration-300 shadow-xl shadow-blue-500/20 group" onclick="initAudio()">
-                <i data-lucide="mic" class="text-white w-10 h-10 group-hover:scale-110 transition-transform"></i>
-            </div>
-            <h2 class="text-3xl font-extrabold mb-4 tracking-tighter">READY TO MEASURE?</h2>
-            <p class="text-slate-400 mb-8 leading-relaxed text-sm">แอปวัดระดับเสียงที่แม่นยำที่สุดผ่านเบราว์เซอร์ พร้อมโหมดท้าทายความดัง และระบบบันทึกสถิติ</p>
-            <div class="grid grid-cols-2 gap-4 text-[10px] text-slate-500 uppercase font-bold">
-                <div class="flex items-center justify-center gap-2 py-2 px-3 bg-slate-900/50 rounded-lg"><i data-lucide="lock" class="w-3 h-3 text-green-500"></i> HTTPS Required</div>
-                <div class="flex items-center justify-center gap-2 py-2 px-3 bg-slate-900/50 rounded-lg"><i data-lucide="database" class="w-3 h-3 text-blue-500"></i> Local Data</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        lucide.createIcons();
-
-        let audioContext, analyser, microphone, dataArray, freqData;
-        let animationId;
-        
-        let peakValue = 0, sumValues = 0, countValues = 0;
-        let currentOffset = 90, currentMode = 'realtime';
-        let isChallenging = false;
-        let challengeMaxDb = 0;
-
-        const dbCircle = document.getElementById('db-circle');
         const dbValueText = document.getElementById('db-value');
-        const peakDisplay = document.getElementById('peak-value');
-        const avgDisplay = document.getElementById('avg-value');
-        const offsetSlider = document.getElementById('offset-slider');
-        const offsetDisplay = document.getElementById('offset-display');
-        const statusIndicator = document.getElementById('status-indicator');
-        const challengeUi = document.getElementById('challenge-ui');
-        const countdownText = document.getElementById('countdown-text');
-        const startChallengeBtn = document.getElementById('start-challenge-btn');
-        const impactLayer = document.getElementById('impact-layer');
-        const leaderboardList = document.getElementById('leaderboard-list');
-        const nameModal = document.getElementById('name-modal');
+        const dbCircle = document.getElementById('db-circle');
         const canvas = document.getElementById('visualizer');
         const ctx = canvas.getContext('2d');
 
-        offsetSlider.addEventListener('input', (e) => {
-            currentOffset = parseInt(e.target.value);
-            offsetDisplay.textContent = `+${currentOffset} dB`;
-        });
+        // ฟังก์ชันเข้าร่วม Arena
+        async function joinArena() {
+            const nameInput = document.getElementById('user-name').value.trim();
+            const roomInput = document.getElementById('room-id').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            peakValue = 0; sumValues = 0; countValues = 0;
-            updateStats(0);
-        });
+            if (!nameInput || !roomInput) {
+                alert("กรุณากรอกชื่อและรหัสห้อง");
+                return;
+            }
 
-        function switchMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active', 'text-white'));
-            document.querySelectorAll('.mode-tab').forEach(t => t.classList.add('text-slate-400'));
-            const activeTab = document.getElementById(`tab-${mode}`);
-            activeTab.classList.add('active', 'text-white');
-            activeTab.classList.remove('text-slate-400');
+            userName = nameInput;
+            currentRoom = roomInput;
 
-            if (mode === 'challenge') {
-                challengeUi.classList.remove('hidden');
-                document.getElementById('display-label').textContent = 'Scream Challenge Mode';
-            } else {
-                challengeUi.classList.add('hidden');
-                document.getElementById('display-label').textContent = 'Live Monitoring';
-                isChallenging = false;
+            const joinBtn = document.getElementById('join-btn');
+            joinBtn.disabled = true;
+            joinBtn.innerHTML = '<span class="animate-spin mr-2 inline-block">◌</span> กำลังเชื่อมต่อ...';
+
+            try {
+                // 1. ลงชื่อเข้าใช้แบบ Anonymous
+                const userCredential = await signInAnonymously(auth);
+                userUid = userCredential.user.uid;
+
+                // 2. เริ่มต้นระบบเสียง
+                await initAudio();
+
+                // 3. เปลี่ยนหน้า UI
+                document.getElementById('join-overlay').classList.add('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
+                document.getElementById('room-info-display').classList.remove('hidden');
+                document.getElementById('display-room-id').textContent = currentRoom;
+                isJoined = true;
+
+                // 4. เริ่มติดตามข้อมูล Leaderboard สดๆ
+                startLeaderboardListener();
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Firebase Error:", err);
+                alert("ไม่สามารถเชื่อมต่อได้: " + err.message);
+                joinBtn.disabled = false;
+                joinBtn.textContent = "เริ่มเชื่อมต่อระบบ";
             }
         }
 
         async function initAudio() {
-            try {
-                // Production: Request audio with professional constraints
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: { 
-                        echoCancellation: false, 
-                        noiseSuppression: false, 
-                        autoGainControl: false,
-                        channelCount: 1 
-                    }
-                });
-
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                microphone = audioContext.createMediaStreamSource(stream);
-
-                analyser.fftSize = 256; 
-                microphone.connect(analyser);
-
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-                freqData = new Uint8Array(analyser.frequencyBinCount);
-
-                document.getElementById('overlay').style.display = 'none';
-                statusIndicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 active-glow"></span> Monitoring Active';
-                statusIndicator.classList.replace('text-slate-400', 'text-green-400');
-
-                updateLeaderboard();
-                requestAnimationFrame(updateFrame);
-            } catch (err) {
-                console.error(err);
-                const isHttps = window.location.protocol === 'https:';
-                if (!isHttps && window.location.hostname !== 'localhost') {
-                    alert('ข้อผิดพลาด: เว็บวัดเสียงต้องรันบนโปรโตคอล HTTPS เท่านั้น (Secure Context)');
-                } else {
-                    alert('ไม่สามารถเข้าถึงไมโครโฟนได้ โปรดตรวจสอบการตั้งค่าเบราว์เซอร์');
-                }
-            }
-        }
-
-        startChallengeBtn.addEventListener('click', () => {
-            startChallengeBtn.classList.add('hidden');
-            let count = 3;
-            challengeMaxDb = 0;
-            
-            const interval = setInterval(() => {
-                countdownText.textContent = count > 0 ? count : "GO!";
-                if (count < 0) {
-                    clearInterval(interval);
-                    isChallenging = true;
-                    countdownText.textContent = "SCREAM!!";
-                    countdownText.classList.add('text-red-500', 'animate-pulse');
-                    
-                    setTimeout(() => {
-                        isChallenging = false;
-                        document.getElementById('final-score-text').textContent = challengeMaxDb.toFixed(1) + " dB";
-                        nameModal.classList.remove('hidden');
-                        countdownText.textContent = "FINISH!";
-                        countdownText.classList.remove('text-red-500', 'animate-pulse');
-                        startChallengeBtn.classList.remove('hidden');
-                        startChallengeBtn.textContent = "PLAY AGAIN";
-                    }, 5000);
-                }
-                count--;
-            }, 1000);
-        });
-
-        document.getElementById('save-score-btn').addEventListener('click', () => {
-            const name = document.getElementById('player-name').value || 'Anonymous';
-            saveScore(name, challengeMaxDb);
-            nameModal.classList.add('hidden');
-            document.getElementById('player-name').value = '';
-        });
-
-        function saveScore(name, score) {
-            let scores = JSON.parse(localStorage.getItem('sound_scores_pro') || '[]');
-            scores.push({ name, score, date: new Date().toLocaleDateString() });
-            scores.sort((a, b) => b.score - a.score);
-            localStorage.setItem('sound_scores_pro', JSON.stringify(scores.slice(0, 10)));
-            updateLeaderboard();
-        }
-
-        function clearLeaderboard() {
-            if (confirm('คุณต้องการล้างสถิติทั้งหมดใช่หรือไม่?')) {
-                localStorage.removeItem('sound_scores_pro');
-                updateLeaderboard();
-            }
-        }
-
-        function updateLeaderboard() {
-            let scores = JSON.parse(localStorage.getItem('sound_scores_pro') || '[]');
-            if (scores.length === 0) {
-                leaderboardList.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">ไม่มีสถิติในเครื่องนี้</div>';
-                return;
-            }
-            
-            leaderboardList.innerHTML = scores.map((s, i) => `
-                <div class="flex justify-between items-center bg-slate-900/40 p-3 rounded-xl border border-slate-800/50 hover:border-blue-500/30 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-bold w-5 ${i === 0 ? 'text-yellow-500' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-orange-400' : 'text-slate-600'}">${i+1}</span>
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold text-white leading-tight">${s.name}</span>
-                            <span class="text-[10px] text-slate-500">${s.date}</span>
-                        </div>
-                    </div>
-                    <span class="text-blue-400 font-black">${s.score.toFixed(1)} <span class="text-[10px] font-normal text-slate-500">dB</span></span>
-                </div>
-            `).join('');
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+            });
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            microphone = audioContext.createMediaStreamSource(stream);
+            analyser.fftSize = 256;
+            microphone.connect(analyser);
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            requestAnimationFrame(updateFrame);
         }
 
         function updateFrame() {
+            if (!isJoined) return;
             analyser.getByteTimeDomainData(dataArray);
-            analyser.getByteFrequencyData(freqData);
 
+            // คำนวณความดังแบบ RMS
             let sumSquare = 0;
             for (let i = 0; i < dataArray.length; i++) {
                 let norm = (dataArray[i] / 128.0) - 1.0;
@@ -365,73 +116,217 @@
             let db = (rms > 0) ? (20 * Math.log10(rms)) + currentOffset : 0;
             db = Math.max(0, Math.min(130, db));
 
-            if (isChallenging && db > challengeMaxDb) challengeMaxDb = db;
+            // แสดงผลบนหน้าจอตัวเอง
+            dbValueText.textContent = db.toFixed(1);
+            const circum = 2 * Math.PI * 110; 
+            dbCircle.style.strokeDashoffset = circum - (db / 130) * circum;
 
-            // Flash effect for impact
-            if (db > 100) {
-                impactLayer.classList.add('flash-impact');
-                setTimeout(() => impactLayer.classList.remove('flash-impact'), 300);
+            // ส่งข้อมูลขึ้น Cloud ทุกๆ 300ms (Throttling)
+            const now = Date.now();
+            if (now - lastUpdate > 300) {
+                syncToCloud(db);
+                lastUpdate = now;
             }
 
-            updateMainDisplay(db);
-            updateStats(db);
             drawVisualizer();
             requestAnimationFrame(updateFrame);
         }
 
-        function updateMainDisplay(db) {
-            dbValueText.textContent = db.toFixed(1);
-            const r = 110; // Logic for MD-LG scale
-            const circum = 2 * Math.PI * r; 
-            const offset = circum - (db / 130) * circum;
-            dbCircle.style.strokeDasharray = circum;
-            dbCircle.style.strokeDashoffset = offset;
-
-            if (db > 95) { dbCircle.style.color = '#ef4444'; dbValueText.style.color = '#f87171'; }
-            else if (db > 75) { dbCircle.style.color = '#f59e0b'; dbValueText.style.color = '#fbbf24'; }
-            else { dbCircle.style.color = '#3b82f6'; dbValueText.style.color = '#ffffff'; }
+        async function syncToCloud(dbValue) {
+            if (!userUid || !currentRoom) return;
+            
+            // Path: artifacts/{appId}/public/data/room_{roomName}/{userId}
+            const collectionName = 'room_' + currentRoom;
+            const playerDoc = doc(db, 'artifacts', appId, 'public', 'data', collectionName, userUid);
+            
+            try {
+                await setDoc(playerDoc, {
+                    name: userName,
+                    db: parseFloat(dbValue.toFixed(1)),
+                    timestamp: Date.now()
+                }, { merge: true });
+            } catch (e) {
+                console.error("Sync error", e);
+            }
         }
 
-        function updateStats(db) {
-            if (db > peakValue) { peakValue = db; peakDisplay.textContent = peakValue.toFixed(1); }
-            if (db > 25) {
-                sumValues += db; countValues++;
-                avgDisplay.textContent = (sumValues / countValues).toFixed(1);
-            }
+        function startLeaderboardListener() {
+            const collectionName = 'room_' + currentRoom;
+            const playersCol = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+            
+            onSnapshot(playersCol, (snapshot) => {
+                let players = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // แสดงเฉพาะคนที่เพิ่งมีการอัปเดตไม่เกิน 10 วินาที
+                    if (Date.now() - data.timestamp < 10000) {
+                        players.push({ id: doc.id, ...data });
+                    }
+                });
+
+                // จัดลำดับความดัง
+                players.sort((a, b) => b.db - a.db);
+                renderLeaderboard(players);
+            }, (err) => console.error("Leaderboard Error:", err));
+        }
+
+        function renderLeaderboard(players) {
+            const list = document.getElementById('live-leaderboard');
+            list.innerHTML = players.map((p, i) => `
+                <div class="flex justify-between items-center bg-slate-900/40 p-3 rounded-xl border ${p.id === userUid ? 'border-blue-500/50 bg-blue-900/10' : 'border-slate-800/50'}">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold ${i < 3 ? 'text-yellow-500' : 'text-slate-600'}">#${i+1}</span>
+                        <span class="text-sm font-bold text-white truncate max-w-[100px]">${p.name} ${p.id === userUid ? '(คุณ)' : ''}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-500 transition-all duration-300" style="width: ${(p.db/130)*100}%"></div>
+                        </div>
+                        <span class="text-xs font-black text-blue-400">${p.db.toFixed(1)}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function drawVisualizer() {
             const width = canvas.width = canvas.offsetWidth;
             const height = canvas.height = canvas.offsetHeight;
             ctx.clearRect(0, 0, width, height);
-            
-            const barWidth = (width / freqData.length) * 2;
-            let x = 0;
-            for(let i = 0; i < freqData.length; i++) {
-                let barHeight = (freqData[i] / 255) * height;
-                ctx.fillStyle = `hsla(${210 + (i/2)}, 80%, 50%, 0.4)`;
-                ctx.fillRect(x, height - barHeight, barWidth, barHeight);
-                x += barWidth + 1;
-            }
-            
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#3b82f6';
             ctx.beginPath();
             const sliceWidth = width / dataArray.length;
-            let waveX = 0;
+            let x = 0;
             for (let i = 0; i < dataArray.length; i++) {
                 const y = (dataArray[i] / 128.0) * height / 2;
-                if (i === 0) ctx.moveTo(waveX, y); else ctx.lineTo(waveX, y);
-                waveX += sliceWidth;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                x += sliceWidth;
             }
             ctx.stroke();
         }
 
-        window.addEventListener('resize', () => {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-        });
-    </script>
-</body>
+        async function leaveRoom() {
+            if (confirm("ต้องการออกจากห้องใช่หรือไม่?")) {
+                if (userUid && currentRoom) {
+                    try {
+                        const collectionName = 'room_' + currentRoom;
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, userUid));
+                    } catch (e) { console.error(e); }
+                }
+                window.location.reload();
+            }
+        }
 
+        // เชื่อมต่อ Event เข้ากับฟังก์ชัน Window
+        window.joinArena = joinArena;
+        window.leaveRoom = leaveRoom;
+
+        document.getElementById('offset-slider').oninput = (e) => {
+            currentOffset = parseInt(e.target.value);
+            document.getElementById('offset-display').textContent = `+${currentOffset} dB`;
+        };
+
+        lucide.createIcons();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #05070a; color: #e2e8f0; overflow-x: hidden; }
+        .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 24px; }
+        .neon-text-blue { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3); }
+        .meter-glow { box-shadow: 0 0 40px rgba(59, 130, 246, 0.15); }
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #3b82f6; margin-top: -6px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl flex justify-between items-center mb-6">
+        <div class="flex items-center gap-2">
+            <div class="p-2 bg-blue-600 rounded-lg"><i data-lucide="mic" class="text-white w-5 h-5"></i></div>
+            <h1 class="text-xl font-bold tracking-tight text-blue-400 uppercase">Sound<span class="text-white">Arena</span> <span class="text-[10px] bg-blue-900 px-2 py-0.5 rounded border border-blue-500/30 ml-1">Live</span></h1>
+        </div>
+        <div id="room-info-display" class="hidden flex items-center gap-3">
+            <div class="px-3 py-1 bg-slate-900/80 border border-slate-700 rounded-full text-xs">
+                Room: <span id="display-room-id" class="text-blue-400 font-bold">----</span>
+            </div>
+            <button onclick="leaveRoom()" class="text-slate-500 hover:text-red-400 transition-colors"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        </div>
+    </header>
+
+    <!-- Main UI -->
+    <main id="main-ui" class="hidden w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Live Meter -->
+        <div class="lg:col-span-8 glass-card p-8 flex flex-col items-center justify-center relative overflow-hidden meter-glow">
+            <div class="absolute top-4 right-6 text-slate-500 text-xs uppercase font-bold tracking-widest">Live Decibels</div>
+            <div class="relative flex items-center justify-center mt-4">
+                <svg class="w-64 h-64 md:w-80 md:h-80 transform -rotate-90">
+                    <circle cx="50%" cy="50%" r="42%" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-800" />
+                    <circle id="db-circle" cx="50%" cy="50%" r="42%" stroke="currentColor" stroke-width="12" fill="transparent" 
+                            stroke-dasharray="1000" stroke-dashoffset="1000"
+                            class="text-blue-500 transition-all duration-75 ease-out" stroke-linecap="round" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="db-value" class="text-7xl md:text-8xl font-black text-white neon-text-blue">0.0</span>
+                    <span class="text-blue-400 font-medium uppercase tracking-widest text-sm">Decibels</span>
+                </div>
+            </div>
+            <div class="w-full h-24 mt-8 relative">
+                <canvas id="visualizer" class="w-full h-full opacity-60"></canvas>
+            </div>
+        </div>
+
+        <!-- Leaderboard & Settings -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            <div class="glass-card p-6 flex-1 flex flex-col min-h-[400px]">
+                <h3 class="text-slate-400 text-xs uppercase font-bold mb-4 flex items-center gap-2 tracking-widest">
+                    <i data-lucide="users" class="w-4 h-4 text-green-400"></i> สมาชิกในห้อง
+                </h3>
+                <div id="live-leaderboard" class="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                    <!-- รายชื่อผู้เล่นจะขึ้นที่นี่ -->
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <div class="flex justify-between text-xs mb-2">
+                    <span class="text-slate-500 font-bold uppercase tracking-widest">Calibration</span>
+                    <span id="offset-display" class="text-blue-400 font-bold">+90 dB</span>
+                </div>
+                <input type="range" id="offset-slider" min="50" max="130" value="90" class="w-full cursor-pointer">
+                <p class="text-[10px] text-slate-600 mt-2">ปรับค่าให้ตรงกับเครื่องวัดเสียงมาตรฐาน</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Join Screen -->
+    <div id="join-overlay" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full glass-card p-10 border-blue-600/40 shadow-2xl">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg rotate-3">
+                <i data-lucide="radio" class="text-white w-8 h-8"></i>
+            </div>
+            <h2 class="text-3xl font-black mb-2 tracking-tighter uppercase italic">Arena Online</h2>
+            <p class="text-slate-500 text-sm mb-8">ใส่ชื่อและรหัสห้องเพื่อแข่งขันกับกลุ่มเพื่อนแบบสดๆ</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 ml-1">Nickname</label>
+                    <input type="text" id="user-name" maxlength="12" placeholder="กรอกชื่อเล่นของคุณ" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 ml-1">Room Code</label>
+                    <input type="text" id="room-id" maxlength="6" placeholder="รหัสห้อง (เช่น 1234)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all uppercase font-mono">
+                </div>
+                <button onclick="joinArena()" id="join-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white shadow-xl shadow-blue-900/20 transition-all flex items-center justify-center gap-2">
+                    เข้าสู่ห้องแข่งขัน
+                </button>
+            </div>
+            <p class="mt-6 text-[10px] text-slate-600 italic">การเชื่อมต่อใช้ Firebase Realtime Database ของคุณ</p>
+        </div>
+    </div>
+
+</body>
 </html>
