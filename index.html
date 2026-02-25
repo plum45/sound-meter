@@ -10,11 +10,12 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Configuration จากที่คุณระบุไว้ ---
-        const firebaseConfig = {
+        // --- Firebase Configuration ---
+        // ตรวจสอบว่ามีค่าจากระบบ (Environment) หรือไม่ ถ้าไม่มีให้ใช้ค่าของคุณจากรูปภาพ
+        const userConfig = {
             apiKey: "AIzaSyCR_R9LbzUqq-rJEZWr_vSzcMWSAxPeEM3g",
             authDomain: "soundmeter-4737b.firebaseapp.com",
             projectId: "soundmeter-4737b",
@@ -24,13 +25,13 @@
             measurementId: "G-99V07ZB1Z7"
         };
 
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : "soundmeter-4737b";
+
         // เริ่มต้น Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // ใช้รหัสโปรเจกต์ของคุณเป็น appId สำหรับ Path
-        const appId = "soundmeter-4737b";
 
         // ตัวแปรสถานะแอป
         let userUid = null;
@@ -52,7 +53,7 @@
             const roomInput = document.getElementById('room-id').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
             if (!nameInput || !roomInput) {
-                alert("กรุณากรอกชื่อและรหัสห้อง");
+                showError("กรุณากรอกชื่อและรหัสห้อง");
                 return;
             }
 
@@ -64,9 +65,14 @@
             joinBtn.innerHTML = '<span class="animate-spin mr-2 inline-block">◌</span> กำลังเชื่อมต่อ...';
 
             try {
-                // 1. ลงชื่อเข้าใช้แบบ Anonymous
-                const userCredential = await signInAnonymously(auth);
-                userUid = userCredential.user.uid;
+                // กฎข้อที่ 3: ต้อง Auth ก่อน Query เสมอ
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                userUid = auth.currentUser.uid;
 
                 // 2. เริ่มต้นระบบเสียง
                 await initAudio();
@@ -78,14 +84,18 @@
                 document.getElementById('display-room-id').textContent = currentRoom;
                 isJoined = true;
 
-                // 4. เริ่มติดตามข้อมูล Leaderboard สดๆ
+                // 4. เริ่มติดตามข้อมูล Leaderboard
                 startLeaderboardListener();
                 lucide.createIcons();
             } catch (err) {
                 console.error("Firebase Error:", err);
-                alert("ไม่สามารถเชื่อมต่อได้: " + err.message);
+                let msg = err.message;
+                if (msg.includes("auth/operation-not-allowed")) {
+                    msg = "คุณยังไม่ได้เปิดใช้งาน 'Anonymous Sign-in' ใน Firebase Console";
+                }
+                showError("ไม่สามารถเชื่อมต่อได้: " + msg);
                 joinBtn.disabled = false;
-                joinBtn.textContent = "เริ่มเชื่อมต่อระบบ";
+                joinBtn.textContent = "เข้าสู่ห้องแข่งขัน";
             }
         }
 
@@ -106,7 +116,6 @@
             if (!isJoined) return;
             analyser.getByteTimeDomainData(dataArray);
 
-            // คำนวณความดังแบบ RMS
             let sumSquare = 0;
             for (let i = 0; i < dataArray.length; i++) {
                 let norm = (dataArray[i] / 128.0) - 1.0;
@@ -116,12 +125,10 @@
             let db = (rms > 0) ? (20 * Math.log10(rms)) + currentOffset : 0;
             db = Math.max(0, Math.min(130, db));
 
-            // แสดงผลบนหน้าจอตัวเอง
             dbValueText.textContent = db.toFixed(1);
             const circum = 2 * Math.PI * 110; 
             dbCircle.style.strokeDashoffset = circum - (db / 130) * circum;
 
-            // ส่งข้อมูลขึ้น Cloud ทุกๆ 300ms (Throttling)
             const now = Date.now();
             if (now - lastUpdate > 300) {
                 syncToCloud(db);
@@ -133,9 +140,9 @@
         }
 
         async function syncToCloud(dbValue) {
-            if (!userUid || !currentRoom) return;
+            if (!userUid || !currentRoom || !auth.currentUser) return;
             
-            // Path: artifacts/{appId}/public/data/room_{roomName}/{userId}
+            // กฎข้อที่ 1: ใช้ Strict Path
             const collectionName = 'room_' + currentRoom;
             const playerDoc = doc(db, 'artifacts', appId, 'public', 'data', collectionName, userUid);
             
@@ -151,6 +158,7 @@
         }
 
         function startLeaderboardListener() {
+            if (!auth.currentUser) return;
             const collectionName = 'room_' + currentRoom;
             const playersCol = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
             
@@ -158,16 +166,20 @@
                 let players = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // แสดงเฉพาะคนที่เพิ่งมีการอัปเดตไม่เกิน 10 วินาที
                     if (Date.now() - data.timestamp < 10000) {
                         players.push({ id: doc.id, ...data });
                     }
                 });
 
-                // จัดลำดับความดัง
+                // กฎข้อที่ 2: ห้ามใช้ Complex Queries (เช่น orderBy) ให้ sort ในหน่วยความจำแทน
                 players.sort((a, b) => b.db - a.db);
                 renderLeaderboard(players);
-            }, (err) => console.error("Leaderboard Error:", err));
+            }, (err) => {
+                console.error("Leaderboard Error:", err);
+                if (err.code === 'permission-denied') {
+                    showError("สิทธิ์การเข้าถึงถูกปฏิเสธ ตรวจสอบ Firestore Rules ของคุณ");
+                }
+            });
         }
 
         function renderLeaderboard(players) {
@@ -176,7 +188,7 @@
                 <div class="flex justify-between items-center bg-slate-900/40 p-3 rounded-xl border ${p.id === userUid ? 'border-blue-500/50 bg-blue-900/10' : 'border-slate-800/50'}">
                     <div class="flex items-center gap-3">
                         <span class="text-[10px] font-bold ${i < 3 ? 'text-yellow-500' : 'text-slate-600'}">#${i+1}</span>
-                        <span class="text-sm font-bold text-white truncate max-w-[100px]">${p.name} ${p.id === userUid ? '(คุณ)' : ''}</span>
+                        <span class="text-sm font-bold text-white truncate max-w-[100px]">${p.name} ${p.id === userUid ? '(Me)' : ''}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -206,18 +218,22 @@
         }
 
         async function leaveRoom() {
-            if (confirm("ต้องการออกจากห้องใช่หรือไม่?")) {
-                if (userUid && currentRoom) {
-                    try {
-                        const collectionName = 'room_' + currentRoom;
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, userUid));
-                    } catch (e) { console.error(e); }
-                }
-                window.location.reload();
+            if (userUid && currentRoom && auth.currentUser) {
+                try {
+                    const collectionName = 'room_' + currentRoom;
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, userUid));
+                } catch (e) { console.error(e); }
             }
+            window.location.reload();
         }
 
-        // เชื่อมต่อ Event เข้ากับฟังก์ชัน Window
+        function showError(msg) {
+            const errorEl = document.getElementById('error-toast');
+            errorEl.textContent = msg;
+            errorEl.classList.remove('hidden');
+            setTimeout(() => errorEl.classList.add('hidden'), 5000);
+        }
+
         window.joinArena = joinArena;
         window.leaveRoom = leaveRoom;
 
@@ -243,6 +259,9 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <!-- Toast Error -->
+    <div id="error-toast" class="hidden fixed top-4 z-[100] bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl font-bold text-sm animate-bounce"></div>
 
     <!-- Header -->
     <header class="w-full max-w-5xl flex justify-between items-center mb-6">
