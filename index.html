@@ -58,6 +58,7 @@
         const pitchCtx = pitchCanvas.getContext('2d');
         const hzValueText = document.getElementById('hz-value');
         const hzLabelText = document.getElementById('hz-label');
+        const waveLengthValueText = document.getElementById('wave-length-value');
 
         // ฟังก์ชันเข้าห้อง
         async function joinArena() {
@@ -172,6 +173,10 @@
                 else if (hz < 300) hzLabelText.textContent = "เสียงทุ้ม (Low Pitch)";
                 else if (hz < 2000) hzLabelText.textContent = "เสียงกลาง (Mid Pitch)";
                 else hzLabelText.textContent = "เสียงแหลม (High Pitch)";
+                
+                // คำนวณความยาวคลื่น (Wavelength) = ความเร็วเสียง (343 m/s) / ความถี่ (Hz)
+                let wavelength = hz > 0 ? 343 / hz : 0;
+                waveLengthValueText.textContent = wavelength > 0 ? wavelength.toFixed(2) : "0.00";
                 
                 drawFrequencyVisualizer();
             }
@@ -406,7 +411,7 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #05070a; color: #e2e8f0; overflow-x: hidden; padding-bottom: 80px; } /* เผื่อที่ให้ Bottom Nav */
+        body { font-family: 'Inter', sans-serif; background-color: #05070a; color: #e2e8f0; overflow-x: hidden; }
         .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 24px; }
         .neon-text-blue { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3); }
         .neon-text-purple { text-shadow: 0 0 10px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.3); }
@@ -464,7 +469,7 @@
     </header>
 
     <!-- Wrap Main UI inside a Container so we can switch between views -->
-    <div id="main-app-container" class="hidden w-full max-w-5xl">
+    <div id="main-app-container" class="hidden w-full max-w-5xl pb-32">
         
         <!-- View 1: VOLUME METER (หน้าวัดความดัง) -->
         <main id="view-volume" class="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
@@ -534,7 +539,7 @@
             <div class="glass-card p-8 flex flex-col items-center justify-center relative overflow-hidden pitch-glow min-h-[500px] border-purple-500/30 bg-gradient-to-b from-slate-900/60 to-purple-900/10">
                 <div class="absolute top-4 right-6 text-purple-400 text-xs uppercase font-bold tracking-widest">Frequency Spectrum</div>
                 
-                <div class="flex flex-col items-center justify-center mt-6 mb-12">
+                <div class="flex flex-col items-center justify-center mt-6 mb-6">
                     <h2 class="text-slate-400 text-sm font-semibold tracking-widest uppercase mb-2">Dominant Pitch</h2>
                     <div class="flex items-end gap-2">
                         <span id="hz-value" class="text-7xl font-black text-white neon-text-purple">0</span>
@@ -543,6 +548,15 @@
                     <span id="hz-label" class="mt-4 px-4 py-1.5 bg-purple-500/20 border border-purple-500/50 rounded-full text-purple-300 text-sm font-bold tracking-wide">
                         กำลังรอรับเสียง...
                     </span>
+                </div>
+
+                <!-- แสดงค่าความยาวคลื่น (Wavelength) -->
+                <div class="flex flex-col items-center justify-center mb-8 bg-slate-900/50 px-8 py-3 rounded-2xl border border-slate-800">
+                    <h2 class="text-slate-500 text-[10px] font-bold tracking-widest uppercase mb-1">ความยาวคลื่น (Wavelength)</h2>
+                    <div class="flex items-end gap-2">
+                        <span id="wave-length-value" class="text-3xl font-black text-purple-200">0.00</span>
+                        <span class="text-slate-400 font-bold mb-1 text-sm">เมตร (m)</span>
+                    </div>
                 </div>
 
                 <!-- Frequency Bar Chart Canvas -->
@@ -555,6 +569,7 @@
             
             <div class="glass-card p-6 text-center text-sm text-slate-400 leading-relaxed">
                 <p>กราฟนี้แสดงสเปกตรัมความถี่ของคลื่นเสียงที่ไมโครโฟนรับได้แบบเรียลไทม์ ยิ่งกราฟเอนไปทางขวา หมายถึงมี <strong>เสียงแหลม (High Frequency)</strong> มากขึ้น</p>
+                <p class="mt-2 text-xs text-slate-500">* ความยาวคลื่นคำนวณจากความเร็วเสียงในอากาศโดยประมาณที่ 343 เมตร/วินาที</p>
             </div>
         </main>
     </div>
