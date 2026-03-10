@@ -69,6 +69,7 @@
 
         input[type=range] {
             -webkit-appearance: none;
+            appearance: none;
             background: transparent;
         }
 
@@ -855,7 +856,10 @@
 
         // --- Main Loop ---
         function updateFrame() {
-            if (!isJoined) return;
+            if (!isJoined) {
+                requestAnimationFrame(updateFrame);
+                return;
+            }
             if (!isMonitoring) {
                 requestAnimationFrame(updateFrame);
                 return;
@@ -884,6 +888,12 @@
             if (maxVal > 50) {
                 hz = (maxIndex / freqDataArray.length) * (audioContext.sampleRate / 2);
             }
+
+            // Feed Games & Background
+            updateBackgroundGradient(dbVal);
+            if (noteGameActive) updateNoteGame(hz);
+            if (drawGameActive) updateDrawGame(dbVal);
+            if (targetActive) updateTargetGame(dbVal);
 
             // Update UI
             if (currentView === 'volume') {
@@ -1497,47 +1507,7 @@
             targetActive = false;
         };
 
-        // ===== HOOK GAMES INTO MAIN LOOP =====
-        // Override updateFrame to also feed games
-        const _origUpdateFrame = updateFrame;
-        // We patch the main loop to also run game updates
-        // by adding a secondary frame hook
-        let gameHz = 0, gameDb = 0;
-        function gameLoop() {
-            if (!isJoined || !analyser) { requestAnimationFrame(gameLoop); return; }
-            // Get frequency data for games
-            analyser.getByteFrequencyData(freqDataArray);
-            let maxVal = -Infinity, maxIndex = -1;
-            for (let i = 0; i < freqDataArray.length; i++) {
-                if (freqDataArray[i] > maxVal) { maxVal = freqDataArray[i]; maxIndex = i; }
-            }
-            if (maxVal > 50) gameHz = (maxIndex / freqDataArray.length) * (audioContext.sampleRate / 2);
-            else gameHz = 0;
-
-            // Get volume
-            analyser.getByteTimeDomainData(dataArray);
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) { let n = (dataArray[i] / 128) - 1; sum += n * n; }
-            gameDb = Math.max(0, Math.min(130, (Math.sqrt(sum / dataArray.length) > 0 ? 20 * Math.log10(Math.sqrt(sum / dataArray.length)) + currentOffset : 0)));
-
-            // Update background gradient
-            updateBackgroundGradient(gameDb);
-
-            // Feed games
-            if (noteGameActive) updateNoteGame(gameHz);
-            if (drawGameActive) updateDrawGame(gameDb);
-            if (targetActive) updateTargetGame(gameDb);
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Start game loop after joining
-        const _origJoin = joinArena;
-        async function joinArenaWrapped() {
-            await _origJoin();
-            if (isJoined) requestAnimationFrame(gameLoop);
-        }
-        window.joinArena = joinArenaWrapped;
+        window.joinArena = joinArena;
 
         // --- Intro ---
         window.addEventListener('load', () => {
@@ -1556,7 +1526,6 @@
             }
         });
 
-        window.joinArena = joinArena;
         lucide.createIcons();
     </script>
 </body>
