@@ -557,13 +557,13 @@
                 </div>
                 <div onclick="startDrawGame()"
                     class="game-card glass-card p-6 text-center border-pink-500/30 bg-gradient-to-b from-slate-900/60 to-pink-900/10">
-                    <div class="text-4xl mb-3">🎨</div>
-                    <h3 class="text-lg font-black text-pink-400">Sound Drawing</h3>
-                    <p class="text-[11px] text-slate-500 mt-2">ใช้เสียงวาดภาพ! เสียงดังสูง เสียงเบาต่ำ สร้างผลงานศิลปะ
+                    <div class="text-4xl mb-3">🎹</div>
+                    <h3 class="text-lg font-black text-pink-400">Draw & Play Piano</h3>
+                    <p class="text-[11px] text-slate-500 mt-2">วาดภาพแล้วฟังเสียงเปียนโน! ยาว=โน้ตสูง, หนา=เสียงดัง
                     </p>
                     <div
                         class="mt-3 px-3 py-1 bg-pink-600/20 rounded-full text-[10px] text-pink-400 font-bold inline-block">
-                        DRAW GAME</div>
+                        🎵 PIANO ART</div>
                 </div>
                 <div onclick="startTargetGame()"
                     class="game-card glass-card p-6 text-center border-amber-500/30 bg-gradient-to-b from-slate-900/60 to-amber-900/10">
@@ -582,6 +582,63 @@
                     <p class="text-[11px] text-slate-500 mt-2">ตะโกนให้สุดเสียง ทำลายบ้าน 3 มิติ! เป้าหมาย: 100 dB ขึ้นไป</p>
                     <div class="mt-3 px-3 py-1 bg-red-600/20 rounded-full text-[10px] text-red-400 font-bold inline-block animate-pulse">
                         NEW! DESTRUCTION</div>
+                </div>
+                <div onclick="startFlappyGame()"
+                    class="game-card glass-card p-6 text-center border-blue-500/30 bg-gradient-to-b from-slate-900/60 to-blue-900/10 hover:scale-105 transition-all outline outline-2 outline-blue-500/20">
+                    <div class="text-4xl mb-3">🚀</div>
+                    <h3 class="text-lg font-black text-blue-400">Pitch Runner</h3>
+                    <p class="text-[11px] text-slate-500 mt-2">ทำเสียงสูงเพื่อลอยขึ้น หลบสิ่งกีดขวาง!</p>
+                    <div class="mt-3 px-3 py-1 bg-blue-600/20 rounded-full text-[10px] text-blue-400 font-bold inline-block animate-pulse">
+                        NEW! SURVIVAL</div>
+                </div>
+            </div>
+
+            </div>
+
+            <!-- Game: Pitch Runner (Endless) -->
+            <div id="game-flappy" class="hidden">
+                <div class="glass-card p-6 border-blue-500/30 bg-gradient-to-b from-slate-900/60 to-blue-950/20">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-black text-blue-400 flex items-center gap-2">🚀 Pitch Runner <span class="text-[10px] text-blue-500/70 font-normal">Endless</span></h3>
+                        <button onclick="exitGame()" class="text-slate-500 hover:text-red-400 text-xs font-bold">✕ ออก</button>
+                    </div>
+                    
+                    <!-- Stats bar -->
+                    <div class="grid grid-cols-4 gap-2 mb-3">
+                        <div class="bg-slate-900/60 rounded-xl p-2 text-center border border-slate-800">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Hz</div>
+                            <div id="flappy-hz" class="font-black text-purple-400 text-base">0</div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl p-2 text-center border border-blue-800/50">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Score</div>
+                            <div id="flappy-score" class="font-black text-blue-400 text-base">0</div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl p-2 text-center border border-yellow-800/50">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Best</div>
+                            <div id="flappy-best" class="font-black text-yellow-400 text-base">0</div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl p-2 text-center border border-orange-800/50">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Combo</div>
+                            <div id="flappy-combo" class="font-black text-orange-400 text-base">x1</div>
+                        </div>
+                    </div>
+
+                    <div class="w-full h-64 relative bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
+                        <canvas id="flappy-canvas" class="w-full h-full block"></canvas>
+                        
+                        <!-- Hit flash overlay -->
+                        <div id="flappy-hit-flash" class="absolute inset-0 bg-red-500/30 pointer-events-none hidden rounded-2xl"></div>
+                        <!-- Score popup -->
+                        <div id="flappy-score-popup" class="absolute top-2 right-3 text-sm font-black text-green-400 pointer-events-none hidden">+1</div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-3 text-xs text-slate-500">
+                        <span><span class="text-blue-400 font-bold">🔊 เสียงสูง</span> = บินขึ้น</span>
+                        <span id="flappy-status-text" class="text-slate-600 italic text-[10px]">กด Start เพื่อเริ่ม</span>
+                        <span><span class="text-purple-400 font-bold">🔉 เสียงต่ำ</span> = ดิ่งลง</span>
+                    </div>
+
+                    <button id="flappy-start-btn" onclick="startFlappyRound()" class="w-full py-3 mt-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl font-black text-white transition-all shadow-lg shadow-blue-500/20">✨ กดเพื่อเริ่มเล่น</button>
                 </div>
             </div>
 
@@ -622,39 +679,84 @@
                 </div>
             </div>
 
-            <!-- Game: Sound Drawing -->
+            <!-- Game: Draw & Play Piano -->
             <div id="game-draw" class="hidden">
-                <div class="glass-card p-6 border-pink-500/30">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-black text-pink-400 flex items-center gap-2">🎨 Sound Drawing</h3>
+                <div class="glass-card p-6 border-pink-500/30 bg-gradient-to-b from-slate-900/60 to-pink-950/20">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-black text-pink-400 flex items-center gap-2">🎹 Draw &amp; Play Piano</h3>
                         <div class="flex gap-2">
+                            <button onclick="undoDrawStroke()" id="draw-undo-btn"
+                                class="text-slate-500 hover:text-yellow-400 text-xs font-bold px-3 py-1 bg-slate-900/50 rounded-lg border border-slate-800" title="Undo">↩ Undo</button>
                             <button onclick="clearDrawCanvas()"
-                                class="text-slate-500 hover:text-pink-400 text-xs font-bold px-3 py-1 bg-slate-900/50 rounded-lg border border-slate-800">🗑
-                                ล้าง</button>
-                            <button onclick="exitGame()" class="text-slate-500 hover:text-red-400 text-xs font-bold">✕
-                                ออก</button>
+                                class="text-slate-500 hover:text-pink-400 text-xs font-bold px-3 py-1 bg-slate-900/50 rounded-lg border border-slate-800">🗑 ล้าง</button>
+                            <button onclick="exitGame()" class="text-slate-500 hover:text-red-400 text-xs font-bold px-2 py-1">✕</button>
                         </div>
                     </div>
-                    <canvas id="draw-canvas" class="w-full h-64 bg-slate-950 rounded-xl border border-slate-800"
-                        style="image-rendering: pixelated;"></canvas>
-                    <div class="flex justify-between mt-3 text-xs text-slate-500">
-                        <span>🔇 เบา = ต่ำ</span>
-                        <span>ระดับเสียง: <span id="draw-db" class="text-pink-400 font-bold">0</span> dB</span>
-                        <span>🔊 ดัง = สูง</span>
+
+                    <!-- Toolbar -->
+                    <div class="flex flex-wrap items-center gap-3 mb-3 p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                        <!-- Color palette -->
+                        <div class="flex gap-1.5 flex-wrap">
+                            <button onclick="setDrawColor('#ec4899')" data-color="#ec4899" class="draw-color-btn w-6 h-6 rounded-full bg-pink-500 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setDrawColor('#3b82f6')" data-color="#3b82f6" class="draw-color-btn w-6 h-6 rounded-full bg-blue-500 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setDrawColor('#22c55e')" data-color="#22c55e" class="draw-color-btn w-6 h-6 rounded-full bg-green-500 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setDrawColor('#eab308')" data-color="#eab308" class="draw-color-btn w-6 h-6 rounded-full bg-yellow-500 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setDrawColor('#a855f7')" data-color="#a855f7" class="draw-color-btn w-6 h-6 rounded-full bg-purple-500 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setDrawColor('#f97316')" data-color="#f97316" class="draw-color-btn w-6 h-6 rounded-full bg-orange-500 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setDrawColor('#ffffff')" data-color="#ffffff" class="draw-color-btn w-6 h-6 rounded-full bg-white border-2 border-transparent hover:border-blue-400 transition-all"></button>
+                        </div>
+                        <div class="w-px h-6 bg-slate-700"></div>
+                        <!-- Brush size -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase">Size</span>
+                            <input type="range" id="draw-brush-size" min="2" max="30" value="6" class="w-20 cursor-pointer" oninput="updateBrushSize(this.value)">
+                            <span id="draw-brush-label" class="text-xs text-pink-400 font-bold w-6">6</span>
+                        </div>
+                        <div class="w-px h-6 bg-slate-700"></div>
+                        <!-- Eraser -->
+                        <button id="draw-eraser-btn" onclick="toggleEraser()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 border border-slate-700 transition-all">⬜ Eraser</button>
                     </div>
-                    <div class="flex gap-2 mt-3 justify-center">
-                        <button onclick="setDrawColor('#ec4899')"
-                            class="w-6 h-6 rounded-full bg-pink-500 border-2 border-transparent hover:border-white"></button>
-                        <button onclick="setDrawColor('#3b82f6')"
-                            class="w-6 h-6 rounded-full bg-blue-500 border-2 border-transparent hover:border-white"></button>
-                        <button onclick="setDrawColor('#22c55e')"
-                            class="w-6 h-6 rounded-full bg-green-500 border-2 border-transparent hover:border-white"></button>
-                        <button onclick="setDrawColor('#eab308')"
-                            class="w-6 h-6 rounded-full bg-yellow-500 border-2 border-transparent hover:border-white"></button>
-                        <button onclick="setDrawColor('#a855f7')"
-                            class="w-6 h-6 rounded-full bg-purple-500 border-2 border-transparent hover:border-white"></button>
-                        <button onclick="setDrawColor('#ffffff')"
-                            class="w-6 h-6 rounded-full bg-white border-2 border-transparent hover:border-blue-400"></button>
+
+                    <!-- Canvas -->
+                    <div class="relative">
+                        <canvas id="draw-canvas" class="w-full rounded-xl border-2 border-slate-700 cursor-crosshair block" style="height: 260px; touch-action: none;"></canvas>
+                        <!-- Playback cursor -->
+                        <div id="draw-play-cursor" class="hidden absolute top-0 bottom-0 w-0.5 bg-pink-400 shadow-[0_0_8px_#ec4899] pointer-events-none transition-none" style="left:0"></div>
+                        <!-- Note indicator -->
+                        <div id="draw-note-indicator" class="hidden absolute top-2 left-2 px-3 py-1 bg-pink-600/90 backdrop-blur-sm rounded-full text-white text-sm font-black shadow-lg pointer-events-none">🎵</div>
+                    </div>
+
+                    <!-- Stroke info + Piano keys mini display -->
+                    <div class="flex items-center justify-between mt-2 text-xs text-slate-500">
+                        <span>เส้น: <span id="draw-stroke-count" class="text-pink-400 font-bold">0</span> เส้น</span>
+                        <span id="draw-hint" class="text-slate-600 text-[10px] italic">วาดเส้น → กด Play เพื่อฟัง</span>
+                        <span>โน้ต: <span id="draw-total-notes" class="text-purple-400 font-bold">0</span></span>
+                    </div>
+
+                    <!-- Piano mini keys row -->
+                    <div id="piano-keys-row" class="flex gap-0.5 mt-2 justify-center"></div>
+
+                    <!-- Playback Controls -->
+                    <div class="flex gap-2 mt-3">
+                        <button id="draw-play-btn" onclick="playDrawMusic()" 
+                            class="flex-1 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-xl font-black text-white text-sm transition-all shadow-lg shadow-pink-600/20 flex items-center justify-center gap-2">
+                            ▶ เล่นเพลง
+                        </button>
+                        <button id="draw-stop-btn" onclick="stopDrawMusic()" class="hidden px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-red-400 text-sm border border-slate-700 transition-all">
+                            ⏹ หยุด
+                        </button>
+                        <!-- Tempo -->
+                        <div class="flex items-center gap-2 px-3 py-2 bg-slate-900/60 rounded-xl border border-slate-800">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase">BPM</span>
+                            <input type="range" id="draw-tempo" min="40" max="200" value="100" class="w-20 cursor-pointer">
+                            <span id="draw-tempo-label" class="text-xs text-purple-400 font-bold w-8">100</span>
+                        </div>
+                    </div>
+
+                    <!-- Info bar -->
+                    <div class="mt-3 p-3 bg-slate-900/40 rounded-xl border border-slate-800 text-[10px] text-slate-500 leading-relaxed">
+                        💡 <span class="text-slate-400">ความยาวเส้น → ระดับโน้ต (สั้น=ต่ำ, ยาว=สูง) | ขนาดพู่กัน → ระดับเสียง (เบา/ดัง) | วาดหลายๆ เส้นเพื่อสร้างทำนอง</span>
                     </div>
                 </div>
             </div>
@@ -1034,6 +1136,7 @@
             if (drawGameActive) updateDrawGame(dbVal);
             if (targetActive) updateTargetGame(dbVal);
             if (houseGameActive) updateHouseGame(dbVal);
+            if (flappyGameActive) updateFlappyGame(hz);
 
             // Update UI
             if (currentView === 'volume') {
@@ -1462,8 +1565,8 @@
             { name: 'ที (B4)', hz: 493.88 },
         ];
         let noteLevel = 0, noteHoldTime = 0, noteGameActive = false;
-        const NOTE_HOLD_REQUIRED = 0.8; // Reduced hold time for easier play (was 1.5)
-        const NOTE_TOLERANCE = 45; // Increased tolerance (was 25Hz)
+        const NOTE_HOLD_REQUIRED = 0.5; // Reduced hold time for easier play (was 1.5 -> 0.8 -> 0.5)
+        const NOTE_TOLERANCE = 80; // Increased tolerance (was 25Hz -> 45Hz -> 80Hz)
 
         window.startNoteGame = function () {
             $('game-menu').classList.add('hidden');
@@ -1537,44 +1640,418 @@
         }
 
         // =============================================
-        // ===== MINI-GAME 2: SOUND DRAWING =====
+        // ===== MINI-GAME 2: DRAW & PLAY PIANO =====
         // =============================================
-        let drawX = 0, drawColor = '#ec4899', drawGameActive = false;
+        let drawColor = '#ec4899';
+        let drawBrushSize = 6;
+        let drawGameActive = false;
+        let drawIsEraser = false;
+        let drawIsDrawing = false;
+        let drawStrokes = []; // [{points:[{x,y}], color, size, length}]
+        let drawCurrentStroke = null;
+        let drawPlaybackTimer = null;
+        let drawIsPlaying = false;
+        let drawPianoCtx = null; // separate AudioContext for piano
+
+        // Piano notes mapping: index -> {note, freq, octave}
+        const PIANO_NOTES = [
+            { name:'C3', freq:130.81 }, { name:'D3', freq:146.83 }, { name:'E3', freq:164.81 },
+            { name:'F3', freq:174.61 }, { name:'G3', freq:196.00 }, { name:'A3', freq:220.00 },
+            { name:'B3', freq:246.94 }, { name:'C4', freq:261.63 }, { name:'D4', freq:293.66 },
+            { name:'E4', freq:329.63 }, { name:'F4', freq:349.23 }, { name:'G4', freq:392.00 },
+            { name:'A4', freq:440.00 }, { name:'B4', freq:493.88 }, { name:'C5', freq:523.25 },
+            { name:'D5', freq:587.33 }, { name:'E5', freq:659.25 }, { name:'F5', freq:698.46 },
+            { name:'G5', freq:783.99 }, { name:'A5', freq:880.00 }, { name:'B5', freq:987.77 },
+            { name:'C6', freq:1046.50 }
+        ];
+
+        function strokeToNote(stroke) {
+            const maxLen = 1200; // px long stroke
+            const ratio = Math.min(stroke.length / maxLen, 1);
+            const noteIdx = Math.floor(ratio * (PIANO_NOTES.length - 1));
+            const vol = Math.min(0.9, 0.15 + (stroke.size / 30) * 0.75);
+            const dur = 0.15 + ratio * 0.7; // note duration
+            return { note: PIANO_NOTES[noteIdx], volume: vol, duration: dur, noteIdx };
+        }
+
+        function playPianoNote(freq, volume, duration, startTime) {
+            if (!drawPianoCtx) return;
+            const osc = drawPianoCtx.createOscillator();
+            const gainNode = drawPianoCtx.createGain();
+            const osc2 = drawPianoCtx.createOscillator(); // harmonic
+            const gainNode2 = drawPianoCtx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(freq * 2, startTime); // octave harmonic
+
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+            gainNode.gain.setValueAtTime(volume, startTime + duration * 0.4);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            gainNode2.gain.setValueAtTime(0, startTime);
+            gainNode2.gain.linearRampToValueAtTime(volume * 0.3, startTime + 0.01);
+            gainNode2.gain.exponentialRampToValueAtTime(0.001, startTime + duration * 0.8);
+
+            osc.connect(gainNode);
+            gainNode.connect(drawPianoCtx.destination);
+            osc2.connect(gainNode2);
+            gainNode2.connect(drawPianoCtx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration + 0.05);
+            osc2.start(startTime);
+            osc2.stop(startTime + duration + 0.05);
+        }
+
+        function getStrokeLength(points) {
+            let len = 0;
+            for (let i = 1; i < points.length; i++) {
+                const dx = points[i].x - points[i-1].x;
+                const dy = points[i].y - points[i-1].y;
+                len += Math.sqrt(dx*dx + dy*dy);
+            }
+            return len;
+        }
+
+        function buildPianoKeysRow() {
+            const row = $('piano-keys-row');
+            row.innerHTML = '';
+            PIANO_NOTES.forEach((n, i) => {
+                const btn = document.createElement('div');
+                btn.id = `piano-key-${i}`;
+                const isBlack = n.name.includes('#');
+                btn.className = `piano-key rounded-sm transition-all duration-100 ${isBlack ? 'bg-slate-800 h-5 w-3' : 'bg-slate-600 h-4 w-3.5'}`;
+                btn.title = n.name;
+                row.appendChild(btn);
+            });
+        }
+
+        function highlightPianoKey(idx) {
+            document.querySelectorAll('.piano-key').forEach((k, i) => {
+                if (i === idx) {
+                    k.style.background = '#ec4899';
+                    k.style.boxShadow = '0 0 8px #ec4899';
+                    k.style.transform = 'scaleY(1.3)';
+                } else {
+                    k.style.background = '';
+                    k.style.boxShadow = '';
+                    k.style.transform = '';
+                }
+            });
+        }
+
+        function redrawCanvas() {
+            const c = $('draw-canvas');
+            if (!c) return;
+            const dCtx = c.getContext('2d');
+            dCtx.fillStyle = '#020617';
+            dCtx.fillRect(0, 0, c.width, c.height);
+            drawStrokes.forEach(stroke => {
+                if (stroke.points.length < 2) return;
+                dCtx.beginPath();
+                dCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    dCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                }
+                dCtx.strokeStyle = stroke.color;
+                dCtx.lineWidth = stroke.size;
+                dCtx.lineCap = 'round';
+                dCtx.lineJoin = 'round';
+                dCtx.stroke();
+            });
+            updateDrawUI();
+        }
+
+        function updateDrawUI() {
+            $('draw-stroke-count').textContent = drawStrokes.length;
+            $('draw-total-notes').textContent = drawStrokes.length;
+        }
 
         window.startDrawGame = function () {
             $('game-menu').classList.add('hidden');
             $('game-draw').classList.remove('hidden');
             drawGameActive = true; drawGamePlayed = true;
+            drawStrokes = [];
+            drawIsPlaying = false;
+
             const c = $('draw-canvas');
-            c.width = c.offsetWidth; c.height = c.offsetHeight;
+            c.width = c.offsetWidth;
+            c.height = c.offsetHeight || 260;
+
             const dCtx = c.getContext('2d');
             dCtx.fillStyle = '#020617';
             dCtx.fillRect(0, 0, c.width, c.height);
-            drawX = 0;
+
+            // Draw grid lines for aesthetics
+            dCtx.strokeStyle = 'rgba(255,255,255,0.03)';
+            dCtx.lineWidth = 1;
+            for (let x = 0; x < c.width; x += 40) {
+                dCtx.beginPath(); dCtx.moveTo(x, 0); dCtx.lineTo(x, c.height); dCtx.stroke();
+            }
+            for (let y = 0; y < c.height; y += 40) {
+                dCtx.beginPath(); dCtx.moveTo(0, y); dCtx.lineTo(c.width, y); dCtx.stroke();
+            }
+
+            setupDrawCanvasEvents(c);
+            buildPianoKeysRow();
+            updateDrawUI();
+
+            // Tempo slider
+            const tempoSlider = $('draw-tempo');
+            tempoSlider.oninput = function() {
+                $('draw-tempo-label').textContent = this.value;
+            };
         };
 
-        window.setDrawColor = function (color) { drawColor = color; };
+        function getCanvasPos(c, e) {
+            const rect = c.getBoundingClientRect();
+            const scaleX = c.width / rect.width;
+            const scaleY = c.height / rect.height;
+            if (e.touches) {
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function setupDrawCanvasEvents(c) {
+            const dCtx = c.getContext('2d');
+
+            function startStroke(e) {
+                if (drawIsPlaying) return;
+                e.preventDefault();
+                drawIsDrawing = true;
+                const pos = getCanvasPos(c, e);
+                drawCurrentStroke = {
+                    points: [pos],
+                    color: drawIsEraser ? '#020617' : drawColor,
+                    size: drawIsEraser ? drawBrushSize * 3 : drawBrushSize,
+                    length: 0
+                };
+                dCtx.beginPath();
+                dCtx.moveTo(pos.x, pos.y);
+            }
+
+            function continueStroke(e) {
+                if (!drawIsDrawing || !drawCurrentStroke) return;
+                e.preventDefault();
+                const pos = getCanvasPos(c, e);
+                const prev = drawCurrentStroke.points[drawCurrentStroke.points.length - 1];
+                const dx = pos.x - prev.x, dy = pos.y - prev.y;
+                drawCurrentStroke.length += Math.sqrt(dx*dx + dy*dy);
+                drawCurrentStroke.points.push(pos);
+
+                dCtx.lineTo(pos.x, pos.y);
+                dCtx.strokeStyle = drawCurrentStroke.color;
+                dCtx.lineWidth = drawCurrentStroke.size;
+                dCtx.lineCap = 'round';
+                dCtx.lineJoin = 'round';
+                dCtx.stroke();
+                dCtx.beginPath();
+                dCtx.moveTo(pos.x, pos.y);
+            }
+
+            function endStroke(e) {
+                if (!drawIsDrawing || !drawCurrentStroke) return;
+                e.preventDefault();
+                drawIsDrawing = false;
+                if (drawCurrentStroke.points.length > 1 && !drawIsEraser) {
+                    drawStrokes.push(drawCurrentStroke);
+                } else if (drawIsEraser) {
+                    // Re-draw canvas to apply eraser
+                    redrawCanvas();
+                }
+                drawCurrentStroke = null;
+                updateDrawUI();
+            }
+
+            // Remove old listeners (clone trick)
+            const newC = c.cloneNode(true);
+            c.parentNode.replaceChild(newC, c);
+            const nc = $('draw-canvas');
+
+            nc.addEventListener('mousedown', startStroke);
+            nc.addEventListener('mousemove', continueStroke);
+            nc.addEventListener('mouseup', endStroke);
+            nc.addEventListener('mouseleave', endStroke);
+            nc.addEventListener('touchstart', startStroke, { passive: false });
+            nc.addEventListener('touchmove', continueStroke, { passive: false });
+            nc.addEventListener('touchend', endStroke, { passive: false });
+        }
+
+        window.setDrawColor = function (color) {
+            drawColor = color;
+            drawIsEraser = false;
+            $('draw-eraser-btn').classList.remove('bg-pink-600/30', 'border-pink-500');
+            document.querySelectorAll('.draw-color-btn').forEach(btn => {
+                btn.style.outline = btn.dataset.color === color ? '2px solid white' : 'none';
+                btn.style.outlineOffset = '2px';
+            });
+        };
+
+        window.updateBrushSize = function(val) {
+            drawBrushSize = parseInt(val);
+            $('draw-brush-label').textContent = val;
+        };
+
+        window.toggleEraser = function() {
+            drawIsEraser = !drawIsEraser;
+            const btn = $('draw-eraser-btn');
+            if (drawIsEraser) {
+                btn.classList.add('bg-pink-600/30', 'border-pink-500');
+                btn.textContent = '✅ Eraser ON';
+                document.querySelectorAll('.draw-color-btn').forEach(b => b.style.outline = 'none');
+            } else {
+                btn.classList.remove('bg-pink-600/30', 'border-pink-500');
+                btn.textContent = '⬜ Eraser';
+            }
+        };
+
         window.clearDrawCanvas = function () {
+            if (drawIsPlaying) stopDrawMusic();
+            drawStrokes = [];
             const c = $('draw-canvas');
             const dCtx = c.getContext('2d');
             dCtx.fillStyle = '#020617';
             dCtx.fillRect(0, 0, c.width, c.height);
-            drawX = 0;
+            // Redraw grid
+            dCtx.strokeStyle = 'rgba(255,255,255,0.03)';
+            dCtx.lineWidth = 1;
+            for (let x = 0; x < c.width; x += 40) {
+                dCtx.beginPath(); dCtx.moveTo(x, 0); dCtx.lineTo(x, c.height); dCtx.stroke();
+            }
+            for (let y = 0; y < c.height; y += 40) {
+                dCtx.beginPath(); dCtx.moveTo(0, y); dCtx.lineTo(c.width, y); dCtx.stroke();
+            }
+            updateDrawUI();
+            document.querySelectorAll('.piano-key').forEach(k => { k.style.background = ''; k.style.boxShadow = ''; k.style.transform = ''; });
+        };
+
+        window.undoDrawStroke = function() {
+            if (drawStrokes.length === 0) return;
+            drawStrokes.pop();
+            redrawCanvas();
+        };
+
+        window.playDrawMusic = function () {
+            if (drawStrokes.length === 0) {
+                showToast('⚠️ วาดเส้นก่อนแล้วค่อยกด Play!', 'error');
+                return;
+            }
+            if (drawIsPlaying) { stopDrawMusic(); return; }
+            drawIsPlaying = true;
+
+            // Create fresh AudioContext
+            drawPianoCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            $('draw-play-btn').innerHTML = '⏸ กำลังเล่น...';
+            $('draw-play-btn').classList.add('opacity-70');
+            $('draw-stop-btn').classList.remove('hidden');
+
+            const bpm = parseInt($('draw-tempo').value) || 100;
+            const beatSec = 60 / bpm;
+            const cursor = $('draw-play-cursor');
+            const noteInd = $('draw-note-indicator');
+            cursor.classList.remove('hidden');
+            noteInd.classList.remove('hidden');
+
+            const c = $('draw-canvas');
+            const canvasWidth = c.offsetWidth || c.width;
+
+            // Sort strokes by x position (left to right)
+            const sorted = [...drawStrokes].sort((a, b) => {
+                const ax = a.points.reduce((s,p) => s + p.x, 0) / a.points.length;
+                const bx = b.points.reduce((s,p) => s + p.x, 0) / b.points.length;
+                return ax - bx;
+            });
+
+            let now = drawPianoCtx.currentTime + 0.1;
+            sorted.forEach((stroke, idx) => {
+                const info = strokeToNote(stroke);
+                playPianoNote(info.note.freq, info.volume, info.duration, now);
+                now += beatSec;
+            });
+
+            // Animate playback cursor
+            let strokeIdx = 0;
+            const totalBeats = sorted.length;
+            const totalMs = beatSec * totalBeats * 1000;
+            const startMs = performance.now();
+
+            function animateCursor() {
+                if (!drawIsPlaying) return;
+                const elapsed = performance.now() - startMs;
+                const progress = Math.min(elapsed / totalMs, 1);
+                cursor.style.left = (progress * 100) + '%';
+
+                const currentIdx = Math.floor((elapsed / (beatSec * 1000)));
+                if (currentIdx !== strokeIdx && currentIdx < sorted.length) {
+                    strokeIdx = currentIdx;
+                    const info = strokeToNote(sorted[strokeIdx]);
+                    noteInd.textContent = '🎵 ' + info.note.name;
+                    highlightPianoKey(info.noteIdx);
+                    // Flash canvas stroke
+                    flashStroke(sorted[strokeIdx]);
+                }
+
+                if (progress < 1) {
+                    drawPlaybackTimer = requestAnimationFrame(animateCursor);
+                } else {
+                    finishPlayback();
+                }
+            }
+
+            drawPlaybackTimer = requestAnimationFrame(animateCursor);
+        };
+
+        function flashStroke(stroke) {
+            const c = $('draw-canvas');
+            if (!c) return;
+            const dCtx = c.getContext('2d');
+            if (stroke.points.length < 2) return;
+            dCtx.save();
+            dCtx.beginPath();
+            dCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+            for (let i = 1; i < stroke.points.length; i++) {
+                dCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+            }
+            dCtx.strokeStyle = '#ffffff';
+            dCtx.lineWidth = stroke.size + 4;
+            dCtx.lineCap = 'round';
+            dCtx.globalAlpha = 0.4;
+            dCtx.stroke();
+            dCtx.restore();
+            // Re-draw original after brief flash
+            setTimeout(() => redrawCanvas(), 80);
+        }
+
+        function finishPlayback() {
+            drawIsPlaying = false;
+            $('draw-play-btn').innerHTML = '▶ เล่นเพลง';
+            $('draw-play-btn').classList.remove('opacity-70');
+            $('draw-stop-btn').classList.add('hidden');
+            $('draw-play-cursor').classList.add('hidden');
+            $('draw-note-indicator').classList.add('hidden');
+            document.querySelectorAll('.piano-key').forEach(k => { k.style.background = ''; k.style.boxShadow = ''; k.style.transform = ''; });
+            if (drawPianoCtx) { drawPianoCtx.close().catch(()=>{}); drawPianoCtx = null; }
+            showToast('🎹 เล่นเพลงจากภาพเสร็จแล้ว!', 'success');
+        }
+
+        window.stopDrawMusic = function() {
+            if (drawPlaybackTimer) cancelAnimationFrame(drawPlaybackTimer);
+            finishPlayback();
         };
 
         function updateDrawGame(dbVal) {
-            if (!drawGameActive) return;
-            const c = $('draw-canvas');
-            const dCtx = c.getContext('2d');
-            $('draw-db').textContent = dbVal.toFixed(1);
-            const y = c.height - (dbVal / 130) * c.height;
-            const brushSize = 2 + (dbVal / 130) * 4;
-            dCtx.beginPath();
-            dCtx.arc(drawX, y, brushSize, 0, Math.PI * 2);
-            dCtx.fillStyle = drawColor;
-            dCtx.fill();
-            drawX += 1.5;
-            if (drawX > c.width) drawX = 0;
+            // No longer driven by microphone; keep stub for compatibility
         }
 
         // =============================================
@@ -1640,9 +2117,10 @@
         }
 
         window.exitGame = function () {
-            ['game-note', 'game-draw', 'game-target', 'game-house'].forEach(id => $(id).classList.add('hidden'));
+            if (drawIsPlaying) stopDrawMusic();
+            ['game-note', 'game-draw', 'game-target', 'game-house', 'game-flappy'].forEach(id => $(id).classList.add('hidden'));
             $('game-menu').classList.remove('hidden');
-            noteGameActive = false; drawGameActive = false; houseGameActive = false;
+            noteGameActive = false; drawGameActive = false; houseGameActive = false; flappyGameActive = false;
             if (targetInterval) clearInterval(targetInterval);
             targetActive = false;
         };
@@ -1749,6 +2227,271 @@
                      }, 500);
                 }, 1000);
             }
+        }
+
+        // =============================================
+        // ===== MINI-GAME 5: PITCH RUNNER (ENDLESS) =====
+        // =============================================
+        let flappyGameActive = false;
+        let flappyState = 'idle'; // idle, playing
+        let flappyScore = 0;
+        let flappyBestScore = 0;
+        let flappyCombo = 0;        // consecutive gates passed
+        let flappyInvincible = 0;   // frames remaining of invincibility
+        let flappyPlayer = { x: 50, y: 150, radius: 10, targetY: 150 };
+        let flappyObstacles = [];
+        let flappyFrame = 0;
+        let flappyScoreFloat = 0;   // precise score accumulator
+        const FLAPPY_INVINCIBLE_FRAMES = 120; // ~2 seconds at 60fps
+        const FLAPPY_PENALTY = 10;  // score deducted on hit
+
+        window.startFlappyGame = function() {
+            $('game-menu').classList.add('hidden');
+            $('game-flappy').classList.remove('hidden');
+            flappyGameActive = true;
+            $('flappy-best').textContent = flappyBestScore;
+            resetFlappyGame();
+        };
+
+        window.resetFlappyGame = function() {
+            flappyScoreFloat = 0;
+            flappyScore = 0;
+            flappyCombo = 0;
+            flappyInvincible = 0;
+            flappyObstacles = [];
+            flappyFrame = 0;
+            flappyPlayer.y = 150;
+            flappyPlayer.targetY = 150;
+            $('flappy-score').textContent = '0';
+            $('flappy-combo').textContent = 'x1';
+            $('flappy-status-text').textContent = 'กด Start เพื่อเริ่ม';
+            $('flappy-start-btn').classList.remove('hidden');
+            $('flappy-start-btn').textContent = "✨ กดเพื่อเริ่มเล่น";
+            flappyState = 'idle';
+            drawFlappyScene();
+        };
+
+        window.startFlappyRound = function() {
+            resetFlappyGame();
+            flappyState = 'playing';
+            $('flappy-start-btn').classList.add('hidden');
+            $('flappy-status-text').textContent = 'กำลังเล่น... ไม่มีสิ้นสุด!';
+        };
+
+        function drawFlappyScene() {
+            const canvas = $('flappy-canvas');
+            if (!canvas) return;
+            if (canvas.width === 0 || canvas.width !== canvas.offsetWidth) {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // --- Background star field ---
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            // deterministic stars from frame so they scroll
+            const starOffset = (flappyFrame * 0.5) % canvas.width;
+            for (let i = 0; i < 30; i++) {
+                const sx = ((i * 137 + starOffset) % canvas.width);
+                const sy = (i * 73) % canvas.height;
+                ctx.fillRect(sx, sy, 1, 1);
+            }
+
+            // Grid Lines (speed effect)
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            const speed = 3 + (flappyScore * 0.05);
+            const offset = (flappyFrame * speed) % 40;
+            for (let x = 0; x < canvas.width + 40; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x - offset, 0);
+                ctx.lineTo(x - offset, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw Obstacles
+            const isInvincible = flappyInvincible > 0;
+            flappyObstacles.forEach(obs => {
+                const grad = ctx.createLinearGradient(obs.x, 0, obs.x + obs.w, 0);
+                grad.addColorStop(0, isInvincible ? '#f59e0b' : '#ef4444');
+                grad.addColorStop(1, isInvincible ? '#f97316' : '#dc2626');
+                ctx.fillStyle = grad;
+                ctx.shadowBlur = isInvincible ? 12 : 8;
+                ctx.shadowColor = isInvincible ? '#f59e0b' : '#dc2626';
+                ctx.beginPath();
+                ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
+                ctx.fill();
+            });
+            ctx.shadowBlur = 0;
+
+            // Draw Player — blink during invincibility
+            const showPlayer = flappyInvincible === 0 || Math.floor(flappyInvincible / 6) % 2 === 0;
+            if (showPlayer) {
+                // Shield glow when invincible
+                if (isInvincible) {
+                    ctx.beginPath();
+                    ctx.arc(flappyPlayer.x, flappyPlayer.y, flappyPlayer.radius + 6, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(251,191,36,0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+                ctx.beginPath();
+                ctx.arc(flappyPlayer.x, flappyPlayer.y, flappyPlayer.radius, 0, Math.PI * 2);
+                ctx.fillStyle = isInvincible ? '#fbbf24' : '#60a5fa';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = isInvincible ? '#f59e0b' : '#3b82f6';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Engine Flame
+                if (flappyState === 'playing' && flappyPlayer.targetY < flappyPlayer.y) {
+                    ctx.beginPath();
+                    ctx.moveTo(flappyPlayer.x - 7, flappyPlayer.y + 8);
+                    ctx.lineTo(flappyPlayer.x + 7, flappyPlayer.y + 8);
+                    ctx.lineTo(flappyPlayer.x, flappyPlayer.y + 22 + Math.random() * 10);
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fill();
+                }
+            }
+
+            // Combo badge on canvas
+            if (flappyState === 'playing' && flappyCombo >= 3) {
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.fillStyle = '#f97316';
+                ctx.textAlign = 'left';
+                ctx.fillText(`🔥 x${flappyCombo} Combo!`, 6, 16);
+            }
+        }
+
+        function triggerHitEffect() {
+            // Flash the background overlay
+            const flash = $('flappy-hit-flash');
+            flash.classList.remove('hidden');
+            setTimeout(() => flash.classList.add('hidden'), 300);
+
+            // Show score popup
+            const popup = $('flappy-score-popup');
+            popup.textContent = `-${FLAPPY_PENALTY} 💥`;
+            popup.classList.remove('hidden');
+            popup.style.color = '#ef4444';
+            setTimeout(() => popup.classList.add('hidden'), 600);
+        }
+
+        function showScoreGain(amount) {
+            const popup = $('flappy-score-popup');
+            const multiplier = Math.max(1, Math.floor(flappyCombo / 5));
+            popup.textContent = multiplier > 1 ? `+${amount} x${multiplier}🔥` : `+${amount}`;
+            popup.classList.remove('hidden');
+            popup.style.color = multiplier > 1 ? '#f97316' : '#4ade80';
+            setTimeout(() => popup.classList.add('hidden'), 400);
+        }
+
+        function updateFlappyGame(hz) {
+            if (!flappyGameActive) return;
+            $('flappy-hz').textContent = Math.round(hz);
+            
+            const canvas = $('flappy-canvas');
+            if (canvas.width === 0 || canvas.width !== canvas.offsetWidth) {
+               canvas.width = canvas.offsetWidth;
+               canvas.height = canvas.offsetHeight;
+            }
+
+            if (flappyState !== 'playing') {
+                drawFlappyScene();
+                return;
+            }
+
+            flappyFrame++;
+            if (flappyInvincible > 0) flappyInvincible--;
+
+            // Map Hz → Y position
+            const minHz = 120, maxHz = 700;
+            if (hz > 50) {
+                let limitedHz = Math.max(minHz, Math.min(maxHz, hz));
+                let percent = (limitedHz - minHz) / (maxHz - minHz);
+                flappyPlayer.targetY = canvas.height - (percent * canvas.height);
+            } else {
+                flappyPlayer.targetY = canvas.height - flappyPlayer.radius;
+            }
+
+            // Smooth interpolation
+            flappyPlayer.y += (flappyPlayer.targetY - flappyPlayer.y) * 0.12;
+            if (flappyPlayer.y < flappyPlayer.radius) flappyPlayer.y = flappyPlayer.radius;
+            if (flappyPlayer.y > canvas.height - flappyPlayer.radius) flappyPlayer.y = canvas.height - flappyPlayer.radius;
+
+            // Difficulty: speed & gap scale with score
+            const speed = 3 + (flappyScore * 0.04);
+            const spawnRate = Math.max(55, 120 - flappyScore * 0.5);
+            const gapSize = Math.max(75, 170 - flappyScore * 0.8);
+
+            // Spawn obstacles
+            if (flappyFrame % Math.floor(spawnRate) === 0) {
+                const gapY = Math.random() * (canvas.height - gapSize - 40) + 20;
+                flappyObstacles.push({ x: canvas.width, y: 0, w: 28, h: gapY, scored: false });
+                flappyObstacles.push({ x: canvas.width, y: gapY + gapSize, w: 28, h: canvas.height - (gapY + gapSize), scored: false });
+            }
+
+            // Move & score obstacles
+            for (let i = flappyObstacles.length - 1; i >= 0; i--) {
+                flappyObstacles[i].x -= speed;
+
+                if (!flappyObstacles[i].scored && flappyObstacles[i].x + flappyObstacles[i].w < flappyPlayer.x) {
+                    flappyObstacles[i].scored = true;
+                    flappyScoreFloat += 0.5; // 2 pieces per gate
+                    const newScore = Math.floor(flappyScoreFloat);
+                    if (newScore > flappyScore) {
+                        // Gate cleared
+                        flappyCombo++;
+                        const multiplier = Math.max(1, Math.floor(flappyCombo / 5));
+                        const gain = 1 * multiplier;
+                        flappyScore = newScore;
+                        // Update best
+                        if (flappyScore > flappyBestScore) {
+                            flappyBestScore = flappyScore;
+                            $('flappy-best').textContent = flappyBestScore;
+                        }
+                        $('flappy-score').textContent = flappyScore;
+                        $('flappy-combo').textContent = `x${Math.max(1, Math.floor(flappyCombo / 5)) + 1}`;
+                        showScoreGain(gain);
+                    }
+                }
+
+                if (flappyObstacles[i].x + flappyObstacles[i].w < -50) {
+                    flappyObstacles.splice(i, 1);
+                }
+            }
+
+            // Collision Detection (skip if invincible)
+            if (flappyInvincible === 0) {
+                let hit = false;
+                for (let obs of flappyObstacles) {
+                    let testX = Math.max(obs.x, Math.min(flappyPlayer.x, obs.x + obs.w));
+                    let testY = Math.max(obs.y, Math.min(flappyPlayer.y, obs.y + obs.h));
+                    let distX = flappyPlayer.x - testX;
+                    let distY = flappyPlayer.y - testY;
+                    if (Math.sqrt(distX*distX + distY*distY) <= flappyPlayer.radius - 2) {
+                        hit = true;
+                        break;
+                    }
+                }
+
+                if (hit) {
+                    // Apply penalty — never game-over, just bounce back
+                    flappyInvincible = FLAPPY_INVINCIBLE_FRAMES;
+                    const penalty = Math.min(FLAPPY_PENALTY, flappyScore);
+                    flappyScore = Math.max(0, flappyScore - penalty);
+                    flappyScoreFloat = flappyScore;
+                    flappyCombo = 0;
+                    $('flappy-score').textContent = flappyScore;
+                    $('flappy-combo').textContent = 'x1';
+                    triggerHitEffect();
+                    showToast(`💥 ชน! -${penalty} คะแนน | ยังเล่นต่อได้!`, 'error');
+                }
+            }
+
+            drawFlappyScene();
         }
 
         window.joinArena = joinArena;
