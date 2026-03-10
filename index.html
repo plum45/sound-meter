@@ -248,6 +248,84 @@
         .progress-ring {
             transition: stroke-dashoffset 0.3s;
         }
+
+        /* House Breaker 3D CSS */
+        .house-container {
+            perspective: 1000px;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s;
+        }
+
+        .house-part {
+            position: absolute;
+            transform-style: preserve-3d;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Walls */
+        .wall {
+            background-color: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            background-image: 
+                linear-gradient(90deg, transparent 49%, rgba(0,0,0,0.05) 50%, transparent 51%),
+                linear-gradient(0deg, transparent 49%, rgba(0,0,0,0.05) 50%, transparent 51%);
+            background-size: 20px 20px;
+        }
+        
+        .wall-front { width: 140px; height: 100px; transform: translateZ(70px); top: 100px; left: 30px; }
+        .wall-back { width: 140px; height: 100px; transform: rotateY(180deg) translateZ(70px); top: 100px; left: 30px; }
+        .wall-left { width: 140px; height: 100px; transform: rotateY(-90deg) translateZ(70px); top: 100px; left: 30px; }
+        .wall-right { width: 140px; height: 100px; transform: rotateY(90deg) translateZ(70px); top: 100px; left: 30px; }
+
+        /* Roof */
+        .roof {
+            background-color: #ef4444;
+            border: 2px solid #b91c1c;
+            background-image: 
+                linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1)),
+                linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1));
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        .roof-left { width: 150px; height: 110px; transform: translateY(40px) translateX(25px) translateZ(35px) rotateX(-45deg); transform-origin: top; }
+        .roof-right { width: 150px; height: 110px; transform: translateY(40px) translateX(25px) translateZ(-35px) rotateX(45deg); transform-origin: top; top: -1px; }
+
+        /* Door and Windows */
+        .door { width: 30px; height: 50px; background: #8b5cf6; position: absolute; bottom: 0; left: 55px; border-radius: 4px 4px 0 0; border: 2px solid #6d28d9; }
+        .window { width: 25px; height: 25px; background: #60a5fa; position: absolute; border: 2px solid #3b82f6; border-radius: 2px; }
+        .window::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #3b82f6; }
+        .window::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #3b82f6; }
+        .window-l { top: 20px; left: 15px; }
+        .window-r { top: 20px; right: 15px; }
+
+        /* Breaking Animation Classes */
+        .shatter .wall-front { transform: translateZ(200px) rotateX(45deg) rotateY(45deg) scale(0.5); opacity: 0; }
+        .shatter .wall-back { transform: translateZ(-200px) rotateX(-45deg) rotateY(-45deg) scale(0.5); opacity: 0; }
+        .shatter .wall-left { transform: translateX(-200px) rotateZ(-45deg) rotateY(-45deg) scale(0.5); opacity: 0; }
+        .shatter .wall-right { transform: translateX(200px) rotateZ(45deg) rotateY(45deg) scale(0.5); opacity: 0; }
+        .shatter .roof-left { transform: translateY(-200px) translateX(-100px) rotateZ(-90deg) scale(0.5); opacity: 0; }
+        .shatter .roof-right { transform: translateY(-200px) translateX(100px) rotateZ(90deg) scale(0.5); opacity: 0; }
+        
+        .crack-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent 45%, rgba(0,0,0,0.5) 48%, transparent 51%),
+                        linear-gradient(-45deg, transparent 45%, rgba(0,0,0,0.5) 48%, transparent 51%);
+            background-size: 30px 30px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .damage-1 .crack-overlay { opacity: 0.3; }
+        .damage-2 .crack-overlay { opacity: 0.7; }
+        .damage-3 .crack-overlay { opacity: 1; }
     </style>
 </head>
 
@@ -467,12 +545,12 @@
         <!-- View 3: GAMES -->
         <main id="view-games" class="hidden w-full flex flex-col gap-6 animate-fade-in">
             <!-- Game Selector -->
-            <div id="game-menu" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div id="game-menu" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div onclick="startNoteGame()"
                     class="game-card glass-card p-6 text-center border-emerald-500/30 bg-gradient-to-b from-slate-900/60 to-emerald-900/10">
                     <div class="text-4xl mb-3">🎵</div>
                     <h3 class="text-lg font-black text-emerald-400">Note Challenge</h3>
-                    <p class="text-[11px] text-slate-500 mt-2">ร้องให้ตรงโน้ต โด เร มี ฟา ซอล ลา ที ด้วยเสียงจริง!</p>
+                    <p class="text-[11px] text-slate-500 mt-2">ร้องให้ตรงโน้ต โด เร มี ฟา ซอล ลา ที ด้วยเสียงจริง! (ง่าย)</p>
                     <div
                         class="mt-3 px-3 py-1 bg-emerald-600/20 rounded-full text-[10px] text-emerald-400 font-bold inline-block">
                         PITCH GAME</div>
@@ -491,11 +569,19 @@
                     class="game-card glass-card p-6 text-center border-amber-500/30 bg-gradient-to-b from-slate-900/60 to-amber-900/10">
                     <div class="text-4xl mb-3">🎯</div>
                     <h3 class="text-lg font-black text-amber-400">Target dB</h3>
-                    <p class="text-[11px] text-slate-500 mt-2">กดเสียงให้ตรงเป้าหมาย dB ที่กำหนด ค้างไว้ให้นานที่สุด!
+                    <p class="text-[11px] text-slate-500 mt-2">กดเสียงให้ตรงเป้าหมาย dB ที่กำหนด! (เป้าใหญ่ขึ้น)
                     </p>
                     <div
                         class="mt-3 px-3 py-1 bg-amber-600/20 rounded-full text-[10px] text-amber-400 font-bold inline-block">
                         VOLUME GAME</div>
+                </div>
+                <div onclick="startHouseGame()"
+                    class="game-card glass-card p-6 text-center border-red-500/30 bg-gradient-to-b from-slate-900/60 to-red-900/10 hover:scale-105 transition-all outline outline-2 outline-red-500/20">
+                    <div class="text-4xl mb-3">🏠💥</div>
+                    <h3 class="text-lg font-black text-red-500">House Breaker 3D</h3>
+                    <p class="text-[11px] text-slate-500 mt-2">ตะโกนให้สุดเสียง ทำลายบ้าน 3 มิติ! เป้าหมาย: 100 dB ขึ้นไป</p>
+                    <div class="mt-3 px-3 py-1 bg-red-600/20 rounded-full text-[10px] text-red-400 font-bold inline-block animate-pulse">
+                        NEW! DESTRUCTION</div>
                 </div>
             </div>
 
@@ -584,7 +670,7 @@
                     <div class="text-center mb-6">
                         <p class="text-slate-500 text-xs mb-1">ทำเสียงให้ตรง</p>
                         <div id="target-db-value" class="text-6xl font-black text-amber-400">60</div>
-                        <span class="text-amber-500/60 text-sm font-bold">dB (±5)</span>
+                        <span class="text-amber-500/60 text-sm font-bold">dB (±15)</span>
                     </div>
                     <div class="relative h-8 bg-slate-900/60 rounded-full border border-slate-800 overflow-hidden mb-4">
                         <div id="target-zone"
@@ -606,6 +692,59 @@
                     <button id="target-start-btn" onclick="startTargetRound()"
                         class="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 rounded-xl font-bold text-white transition-all">🎯
                         START</button>
+                </div>
+            </div>
+
+            <!-- Game: House Breaker 3D -->
+            <div id="game-house" class="hidden">
+                <div class="glass-card p-6 border-red-500/30">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-black text-red-500 flex items-center gap-2">🏠💥 House Breaker 3D</h3>
+                        <button onclick="exitGame()" class="text-slate-500 hover:text-red-400 text-xs font-bold">✕
+                            ออก</button>
+                    </div>
+                    
+                    <div class="text-center mb-2">
+                        <div class="text-sm text-slate-400 mb-2">พลังตะโกนสะสม: <span id="house-db-power" class="text-red-400 font-bold text-xl">0</span> / 100 dB</div>
+                        
+                        <!-- Health Bar -->
+                        <div class="w-full max-w-xs mx-auto h-4 bg-slate-900 rounded-full border border-slate-700 overflow-hidden mb-6 relative">
+                            <div id="house-health-fill" class="h-full bg-gradient-to-r from-green-500 to-red-500 transition-all duration-75" style="width: 100%"></div>
+                            <span class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white shadow-black drop-shadow-md">พลังบ้าน <span id="house-hp-text" class="ml-1">100%</span></span>
+                        </div>
+                    </div>
+
+                    <!-- 3D House Environment -->
+                    <div class="h-64 flex items-center justify-center bg-slate-950/50 rounded-2xl border border-slate-800 overflow-hidden relative" style="perspective: 800px;">
+                        
+                        <div id="house-container" class="house-container">
+                            <!-- Roof -->
+                            <div class="house-part roof roof-left"><div class="crack-overlay"></div></div>
+                            <div class="house-part roof roof-right"><div class="crack-overlay"></div></div>
+                            
+                            <!-- Walls -->
+                            <div class="house-part wall wall-back"><div class="crack-overlay"></div></div>
+                            <div class="house-part wall wall-left"><div class="crack-overlay"></div></div>
+                            <div class="house-part wall wall-right"><div class="crack-overlay"></div></div>
+                            <div class="house-part wall wall-front">
+                                <div class="crack-overlay"></div>
+                                <div class="door"></div>
+                                <div class="window window-l"></div>
+                                <div class="window window-r"></div>
+                            </div>
+                        </div>
+
+                        <!-- Explosion Particle Container -->
+                        <div id="explosion-effect" class="absolute inset-0 pointer-events-none hidden bg-red-500/20 mix-blend-screen transition-opacity h-full w-full"></div>
+                    </div>
+                    
+                    <div id="house-feedback" class="text-center text-sm font-bold mt-4 animate-pulse text-red-400">ตะโกนสะสมพลังให้ครบ 100 dB เพื่อทำลายบ้าน!</div>
+
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="resetHouseGame()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-slate-300 transition-all text-xs">
+                           🔄 สร้างบ้านใหม่
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -894,6 +1033,7 @@
             if (noteGameActive) updateNoteGame(hz);
             if (drawGameActive) updateDrawGame(dbVal);
             if (targetActive) updateTargetGame(dbVal);
+            if (houseGameActive) updateHouseGame(dbVal);
 
             // Update UI
             if (currentView === 'volume') {
@@ -1322,8 +1462,8 @@
             { name: 'ที (B4)', hz: 493.88 },
         ];
         let noteLevel = 0, noteHoldTime = 0, noteGameActive = false;
-        const NOTE_HOLD_REQUIRED = 1.5; // seconds to hold note
-        const NOTE_TOLERANCE = 25; // Hz tolerance
+        const NOTE_HOLD_REQUIRED = 0.8; // Reduced hold time for easier play (was 1.5)
+        const NOTE_TOLERANCE = 45; // Increased tolerance (was 25Hz)
 
         window.startNoteGame = function () {
             $('game-menu').classList.add('hidden');
@@ -1453,9 +1593,9 @@
             $('target-feedback').textContent = 'กด START แล้วทำเสียงให้ตรงเป้า!';
             $('target-start-btn').classList.remove('hidden');
             targetActive = false;
-            // Update target zone
-            const zoneLeft = ((targetDb - 5) / 130) * 100;
-            const zoneWidth = (10 / 130) * 100;
+            // Update target zone - made larger
+            const zoneLeft = Math.max(0, ((targetDb - 15) / 130) * 100);
+            const zoneWidth = (30 / 130) * 100;
             $('target-zone').style.left = zoneLeft + '%';
             $('target-zone').style.width = zoneWidth + '%';
         };
@@ -1485,12 +1625,12 @@
             const pos = (dbVal / 130) * 100;
             $('target-needle').style.left = Math.max(0, Math.min(98, pos)) + '%';
             const diff = Math.abs(dbVal - targetDb);
-            if (diff <= 5) {
+            if (diff <= 15) { // Increased target hit area
                 targetScore++;
                 $('target-score').textContent = targetScore;
                 $('target-feedback').textContent = '🎯 ตรงเป้า! +1';
                 $('target-feedback').className = 'text-center text-xs mt-3 text-emerald-400 font-bold';
-            } else if (diff <= 15) {
+            } else if (diff <= 25) {
                 $('target-feedback').textContent = dbVal > targetDb ? '⬇️ เบาลงอีกนิด' : '⬆️ ดังขึ้นอีกนิด';
                 $('target-feedback').className = 'text-center text-xs mt-3 text-yellow-400';
             } else {
@@ -1500,12 +1640,116 @@
         }
 
         window.exitGame = function () {
-            ['game-note', 'game-draw', 'game-target'].forEach(id => $(id).classList.add('hidden'));
+            ['game-note', 'game-draw', 'game-target', 'game-house'].forEach(id => $(id).classList.add('hidden'));
             $('game-menu').classList.remove('hidden');
-            noteGameActive = false; drawGameActive = false;
+            noteGameActive = false; drawGameActive = false; houseGameActive = false;
             if (targetInterval) clearInterval(targetInterval);
             targetActive = false;
         };
+
+        // =============================================
+        // ===== MINI-GAME 4: HOUSE BREAKER 3D =====
+        // =============================================
+        let houseGameActive = false;
+        let houseHealth = 100;
+        let maxHouseDb = 0;
+
+        window.startHouseGame = function() {
+            $('game-menu').classList.add('hidden');
+            $('game-house').classList.remove('hidden');
+            houseGameActive = true;
+            resetHouseGame();
+        };
+
+        window.resetHouseGame = function() {
+            houseHealth = 100;
+            maxHouseDb = 0;
+            const hc = $('house-container');
+            const explosion = $('explosion-effect');
+            
+            // Remove shattered classes and damage
+            hc.classList.remove('shatter', 'damage-1', 'damage-2', 'damage-3');
+            hc.style.transform = `rotateY(-15deg) rotateX(5deg)`; // Base angle
+            
+            // Reset UI
+            $('house-health-fill').style.width = '100%';
+            $('house-hp-text').textContent = '100%';
+            $('house-db-power').textContent = '0';
+            $('house-feedback').textContent = 'ตะโกนสะสมพลังให้ครบ 100 dB เพื่อทำลายบ้าน!';
+            $('house-feedback').className = "text-center text-sm font-bold mt-4 animate-pulse text-red-400";
+            
+            explosion.classList.add('hidden');
+        };
+
+        function updateHouseGame(dbVal) {
+            if (!houseGameActive || houseHealth <= 0) return;
+            
+            // Allow smoothing or track max peak
+            if (dbVal > maxHouseDb) maxHouseDb = dbVal;
+            
+            // Only deal damage if dB is somewhat high
+            // Damage scales very quickly above 70dB
+            if (dbVal > 70) {
+                 const damage = (Math.pow((dbVal - 70) / 30, 2)) * 3; // The louder, the significantly higher damage
+                 houseHealth = Math.max(0, houseHealth - damage);
+            } else if (houseHealth < 100) {
+                 // slowly regenerate if they are quiet
+                 houseHealth = Math.min(100, houseHealth + 0.5);
+            }
+
+            // UI
+            $('house-db-power').textContent = maxHouseDb.toFixed(0);
+            $('house-health-fill').style.width = `${houseHealth}%`;
+            $('house-hp-text').textContent = houseHealth.toFixed(0) + '%';
+            
+            const hc = $('house-container');
+            
+            // Visual Shake (intensity depends on current dB)
+            if (dbVal > 60) {
+                const shakeIntensity = (dbVal - 60) / 5;
+                const randomX = (Math.random() - 0.5) * shakeIntensity;
+                const randomY = (Math.random() - 0.5) * shakeIntensity;
+                // Add to base rotation
+                hc.style.transform = `rotateY(-15deg) rotateX(5deg) translate(${randomX}px, ${randomY}px)`;
+            } else {
+                hc.style.transform = `rotateY(-15deg) rotateX(5deg)`;
+            }
+            
+            // Crack Visuals
+            hc.classList.remove('damage-1', 'damage-2', 'damage-3');
+            if (houseHealth <= 25) {
+                hc.classList.add('damage-3');
+                $('house-feedback').textContent = 'บ้านจะพังแล้ว!! อีกนิดเดียว!!';
+            } else if (houseHealth <= 50) {
+                hc.classList.add('damage-2');
+                $('house-feedback').textContent = 'เกิดรอยร้าวแล้ว! ตะโกนต่อ!';
+            } else if (houseHealth <= 75) {
+                hc.classList.add('damage-1');
+            }
+
+            // Destruction
+            if (houseHealth <= 0) {
+                hc.classList.add('shatter');
+                
+                // Screen flash effect
+                const explosion = $('explosion-effect');
+                explosion.classList.remove('hidden');
+                explosion.classList.add('animate-pulse');
+                
+                $('house-feedback').textContent = '💥 บรึ้มมมม!! บ้านพังทลาย!! 💥';
+                $('house-feedback').className = "text-center text-xl font-black mt-4 text-red-500 animate-bounce";
+                
+                showToast(`💥 คุณพังบ้านด้วยความดังทะลุ ${maxHouseDb.toFixed(1)} dB!`, 'success');
+                
+                setTimeout(() => {
+                     explosion.classList.add('opacity-0');
+                     setTimeout(()=> {
+                         explosion.classList.add('hidden');
+                         explosion.classList.remove('opacity-0', 'animate-pulse');
+                     }, 500);
+                }, 1000);
+            }
+        }
 
         window.joinArena = joinArena;
 
