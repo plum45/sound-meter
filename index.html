@@ -1749,6 +1749,7 @@
             const dCtx = c.getContext('2d');
             dCtx.fillStyle = '#020617';
             dCtx.fillRect(0, 0, c.width, c.height);
+
             drawStrokes.forEach(stroke => {
                 if (stroke.points.length < 2) return;
                 dCtx.beginPath();
@@ -1762,12 +1763,24 @@
                 dCtx.lineJoin = 'round';
                 dCtx.stroke();
             });
+
+            // Re-draw grid
+            dCtx.strokeStyle = 'rgba(255,255,255,0.03)';
+            dCtx.lineWidth = 1;
+            for (let x = 0; x < c.width; x += 40) {
+                dCtx.beginPath(); dCtx.moveTo(x, 0); dCtx.lineTo(x, c.height); dCtx.stroke();
+            }
+            for (let y = 0; y < c.height; y += 40) {
+                dCtx.beginPath(); dCtx.moveTo(0, y); dCtx.lineTo(c.width, y); dCtx.stroke();
+            }
+
             updateDrawUI();
         }
 
         function updateDrawUI() {
-            $('draw-stroke-count').textContent = drawStrokes.length;
-            $('draw-total-notes').textContent = drawStrokes.length;
+            const validStrokes = drawStrokes.filter(s => !s.isEraser).length;
+            $('draw-stroke-count').textContent = validStrokes;
+            $('draw-total-notes').textContent = validStrokes;
         }
 
         window.startDrawGame = function () {
@@ -1795,7 +1808,11 @@
                 dCtx.beginPath(); dCtx.moveTo(0, y); dCtx.lineTo(c.width, y); dCtx.stroke();
             }
 
-            setupDrawCanvasEvents(c);
+            if (!isDrawCanvasSetup) {
+                setupDrawCanvasEvents(c);
+                isDrawCanvasSetup = true;
+            }
+
             buildPianoKeysRow();
             updateDrawUI();
 
@@ -1822,9 +1839,9 @@
             };
         }
 
-        function setupDrawCanvasEvents(c) {
-            const dCtx = c.getContext('2d');
+        let isDrawCanvasSetup = false;
 
+        function setupDrawCanvasEvents(c) {
             function startStroke(e) {
                 if (drawIsPlaying) return;
                 e.preventDefault();
@@ -1834,8 +1851,10 @@
                     points: [pos],
                     color: drawIsEraser ? '#020617' : drawColor,
                     size: drawIsEraser ? drawBrushSize * 3 : drawBrushSize,
-                    length: 0
+                    length: 0,
+                    isEraser: drawIsEraser
                 };
+                const dCtx = c.getContext('2d');
                 dCtx.beginPath();
                 dCtx.moveTo(pos.x, pos.y);
             }
@@ -1849,6 +1868,7 @@
                 drawCurrentStroke.length += Math.sqrt(dx*dx + dy*dy);
                 drawCurrentStroke.points.push(pos);
 
+                const dCtx = c.getContext('2d');
                 dCtx.lineTo(pos.x, pos.y);
                 dCtx.strokeStyle = drawCurrentStroke.color;
                 dCtx.lineWidth = drawCurrentStroke.size;
@@ -1863,28 +1883,20 @@
                 if (!drawIsDrawing || !drawCurrentStroke) return;
                 e.preventDefault();
                 drawIsDrawing = false;
-                if (drawCurrentStroke.points.length > 1 && !drawIsEraser) {
+                if (drawCurrentStroke.points.length > 1) {
                     drawStrokes.push(drawCurrentStroke);
-                } else if (drawIsEraser) {
-                    // Re-draw canvas to apply eraser
-                    redrawCanvas();
                 }
                 drawCurrentStroke = null;
-                updateDrawUI();
+                redrawCanvas();
             }
 
-            // Remove old listeners (clone trick)
-            const newC = c.cloneNode(true);
-            c.parentNode.replaceChild(newC, c);
-            const nc = $('draw-canvas');
-
-            nc.addEventListener('mousedown', startStroke);
-            nc.addEventListener('mousemove', continueStroke);
-            nc.addEventListener('mouseup', endStroke);
-            nc.addEventListener('mouseleave', endStroke);
-            nc.addEventListener('touchstart', startStroke, { passive: false });
-            nc.addEventListener('touchmove', continueStroke, { passive: false });
-            nc.addEventListener('touchend', endStroke, { passive: false });
+            c.addEventListener('mousedown', startStroke);
+            c.addEventListener('mousemove', continueStroke);
+            c.addEventListener('mouseup', endStroke);
+            c.addEventListener('mouseleave', endStroke);
+            c.addEventListener('touchstart', startStroke, { passive: false });
+            c.addEventListener('touchmove', continueStroke, { passive: false });
+            c.addEventListener('touchend', endStroke, { passive: false });
         }
 
         window.setDrawColor = function (color) {
@@ -1967,7 +1979,7 @@
             const canvasWidth = c.offsetWidth || c.width;
 
             // Sort strokes by x position (left to right)
-            const sorted = [...drawStrokes].sort((a, b) => {
+            const sorted = [...drawStrokes].filter(s => !s.isEraser).sort((a, b) => {
                 const ax = a.points.reduce((s,p) => s + p.x, 0) / a.points.length;
                 const bx = b.points.reduce((s,p) => s + p.x, 0) / b.points.length;
                 return ax - bx;
